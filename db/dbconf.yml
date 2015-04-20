@@ -1,0 +1,3 @@
+development:
+  driver: postgres
+  open: user=appstudio password=appstudio dbname=appstudio sslmode=disable
