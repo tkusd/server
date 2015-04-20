@@ -1,0 +1,37 @@
+box: wercker/golang
+
+services:
+  - wercker/postgresql
+
+build:
+  steps:
+    - setup-go-workspace
+    # - wercker/golint
+
+    - script:
+        name: Set environment variables
+        code: |
+          export GO_ENV=wercker
+
+    - script:
+        name: go get
+        code: |
+          cd $WERCKER_SOURCE_DIR
+          go version
+          go get -t ./...
+
+    - script:
+        name: Migrate database
+        code: |
+          cd $WERCKER_SOURCE_DIR
+          $GOPATH/bin/goose -env=wercker up
+
+    - script:
+        name: go build
+        code: |
+          go build ./...
+
+    - script:
+        name: go test
+        code: |
+          go test ./...
