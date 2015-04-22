@@ -20,6 +20,9 @@ const (
 	// 1300: Data error
 	WrongPasswordError = 1300
 	EmailUsedError     = 1301
+	TokenRequiredError = 1302
+	TokenInvalidError  = 1303
+	UserForbiddenError = 1304
 )
 
 type APIError struct {

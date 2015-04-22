@@ -33,6 +33,10 @@ func (uid UUID) Value() (driver.Value, error) {
 	return uid.UUID.String(), nil
 }
 
+func (uid UUID) Equal(a UUID) bool {
+	return uuid.Equal(uid.UUID, a.UUID)
+}
+
 func NewRandomUUID() UUID {
 	return UUID{uuid.NewRandom()}
 }

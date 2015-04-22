@@ -3,14 +3,21 @@ package controller
 import (
 	"net/http"
 
+	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 	"github.com/tommy351/app-studio-server/controller/v1"
 	"github.com/tommy351/app-studio-server/util"
 )
 
-func RegisterRoute(r *mux.Router) {
+func Router() http.Handler {
+	n := negroni.New()
+	r := mux.NewRouter()
+
 	r.HandleFunc("/", home)
-	v1.RegisterRoute(r.PathPrefix("/v1").Subrouter())
+	r.PathPrefix("/v1").Handler(v1.Router())
+	n.UseHandler(r)
+
+	return n
 }
 
 func home(res http.ResponseWriter, req *http.Request) {

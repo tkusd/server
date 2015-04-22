@@ -3,7 +3,6 @@ package v1
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/mholt/binding"
 	"github.com/tommy351/app-studio-server/model"
 	"github.com/tommy351/app-studio-server/util"
@@ -23,24 +22,6 @@ func (form *UserForm) FieldMap() binding.FieldMap {
 		&form.Password:    "password",
 		&form.OldPassword: "old_password",
 	}
-}
-
-func GetUser(res http.ResponseWriter, req *http.Request) *model.User {
-	vars := mux.Vars(req)
-
-	if id, ok := vars["id"]; ok {
-		if user, err := model.GetUser(util.ParseUUID(id)); err == nil {
-			return user
-		}
-	}
-
-	util.HandleAPIError(res, &util.APIError{
-		Code:    util.UserNotFoundError,
-		Message: "User not found.",
-		Status:  http.StatusNotFound,
-	})
-
-	return nil
 }
 
 func UserCreate(res http.ResponseWriter, req *http.Request) {
@@ -98,8 +79,14 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 }
 
 func UserShow(res http.ResponseWriter, req *http.Request) {
-	if user := GetUser(res, req); user != nil {
-		util.RenderJSON(res, http.StatusOK, user)
+	if user, err := GetUser(res, req); err != nil {
+		util.HandleAPIError(res, err)
+	} else {
+		if e := CheckUserPermission(res, req, user.ID); e == nil {
+			util.RenderJSON(res, http.StatusOK, user)
+		} else {
+			util.RenderJSON(res, http.StatusOK, user.PublicProfile())
+		}
 	}
 }
 
@@ -111,8 +98,15 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	var user *model.User
+	var err error
 
-	if user = GetUser(res, req); user == nil {
+	if user, err = GetUser(res, req); err != nil {
+		util.HandleAPIError(res, err)
+		return
+	}
+
+	if err = CheckUserPermission(res, req, user.ID); err != nil {
+		util.HandleAPIError(res, err)
 		return
 	}
 
@@ -159,8 +153,15 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 
 func UserDestroy(res http.ResponseWriter, req *http.Request) {
 	var user *model.User
+	var err error
 
-	if user = GetUser(res, req); user == nil {
+	if user, err = GetUser(res, req); err != nil {
+		util.HandleAPIError(res, err)
+		return
+	}
+
+	if err := CheckUserPermission(res, req, user.ID); err != nil {
+		util.HandleAPIError(res, err)
 		return
 	}
 

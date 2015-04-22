@@ -1,8 +1,16 @@
 package v1
 
-import "github.com/gorilla/mux"
+import (
+	"net/http"
 
-func RegisterRoute(r *mux.Router) {
+	"github.com/codegangsta/negroni"
+	"github.com/gorilla/mux"
+)
+
+func Router() http.Handler {
+	n := negroni.New()
+	r := mux.NewRouter()
+
 	// Users collection
 	users := r.PathPrefix("/users").Subrouter()
 	users.Methods("POST").HandlerFunc(UserCreate)
@@ -29,4 +37,8 @@ func RegisterRoute(r *mux.Router) {
 	project.Methods("PUT", "PATCH").HandlerFunc(ProjectUpdate)
 	project.Methods("DELETE").HandlerFunc(ProjectDestroy)
 	project.Methods("GET").Path("/full").HandlerFunc(ProjectFull)
+
+	n.UseHandler(r)
+
+	return n
 }

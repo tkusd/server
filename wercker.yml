@@ -24,6 +24,7 @@ build:
     - script:
         name: Migrate database
         code: |
+          go get bitbucket.org/liamstask/goose/cmd/goose
           $GOPATH/bin/goose -env=wercker up
 
     - script:

@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-
-	"github.com/gorilla/mux"
 )
 
 type requestOptions struct {
@@ -24,7 +22,7 @@ type fixtureUser struct {
 	Password string `json:"password"`
 }
 
-var router *mux.Router
+var router http.Handler
 
 var fixtureUsers = []fixtureUser{
 	fixtureUser{Name: "John", Email: "john@abc.com", Password: "123456"},
@@ -32,8 +30,7 @@ var fixtureUsers = []fixtureUser{
 }
 
 func init() {
-	router = mux.NewRouter()
-	RegisterRoute(router)
+	router = Router()
 }
 
 func request(options *requestOptions) *httptest.ResponseRecorder {
