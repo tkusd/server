@@ -5,6 +5,7 @@ import (
 
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 )
@@ -58,7 +59,7 @@ func request(options *requestOptions) *httptest.ResponseRecorder {
 	router.ServeHTTP(w, req)
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	return w
