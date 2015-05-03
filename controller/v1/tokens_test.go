@@ -32,13 +32,13 @@ func createTestToken(data interface{}, body interface{}) *httptest.ResponseRecor
 func TestTokenCreate(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	Convey("Success", t, func() {
 		now := time.Now().Truncate(time.Second)
 		token := new(model.Token)
 		r := createTestToken(token, fixtureUsers[0])
-		defer model.DeleteToken(token)
+		defer token.Delete()
 
 		So(r.Code, ShouldEqual, http.StatusCreated)
 		So(r.Header().Get("Pragma"), ShouldEqual, "no-cache")
@@ -46,7 +46,7 @@ func TestTokenCreate(t *testing.T) {
 		So(r.Header().Get("Expires"), ShouldEqual, "0")
 		So(token.ID, ShouldNotBeEmpty)
 		So(token.UserID, ShouldResemble, user.ID)
-		So(token.CreatedAt, ShouldHappenOnOrAfter, now)
+		So(token.CreatedAt.Time, ShouldHappenOnOrAfter, now)
 	})
 
 	Convey("Email is required", t, func() {
@@ -96,11 +96,11 @@ func TestTokenCreate(t *testing.T) {
 			"password": "werjwoerijwer",
 		})
 
-		So(r.Code, ShouldEqual, http.StatusUnauthorized)
+		So(r.Code, ShouldEqual, http.StatusBadRequest)
 		So(err, ShouldResemble, &util.APIError{
 			Field:   "password",
 			Code:    util.WrongPasswordError,
-			Message: "Password is wrong",
+			Message: "Password is wrong.",
 		})
 	})
 }
@@ -108,14 +108,14 @@ func TestTokenCreate(t *testing.T) {
 func TestTokenDestroy(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	Convey("Success", t, func() {
 		token := new(model.Token)
 		createTestToken(token, fixtureUsers[0])
 		r := request(&requestOptions{
 			Method: "DELETE",
-			URL:    "/tokens/" + token.GetBase64ID(),
+			URL:    "/tokens/" + token.ID.String(),
 		})
 
 		So(r.Code, ShouldEqual, http.StatusNoContent)

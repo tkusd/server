@@ -17,17 +17,24 @@ type requestOptions struct {
 	Body    interface{}
 }
 
-type fixtureUser struct {
+var router http.Handler
+
+var fixtureUsers = []struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}{
+	{Name: "John", Email: "john@abc.com", Password: "123456"},
+	{Name: "Mary", Email: "mary@abc.com", Password: "234567"},
 }
 
-var router http.Handler
-
-var fixtureUsers = []fixtureUser{
-	fixtureUser{Name: "John", Email: "john@abc.com", Password: "123456"},
-	fixtureUser{Name: "Mary", Email: "mary@abc.com", Password: "234567"},
+var fixtureProjects = []struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	IsPrivate   bool   `json:"is_private"`
+}{
+	{Title: "Hello", Description: "Test"},
+	{Title: "World", IsPrivate: true},
 }
 
 func init() {

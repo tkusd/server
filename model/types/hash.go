@@ -1,4 +1,4 @@
-package util
+package types
 
 import (
 	"crypto/md5"
@@ -9,23 +9,30 @@ import (
 	"hash"
 )
 
+// Hash equals to a slice of byte. But it can deal with the database properly.
 type Hash []byte
 
+// Scan implements the sql.Scanner interface.
 func (h *Hash) Scan(val interface{}) error {
 	if b, ok := val.([]byte); ok {
-		if result, err := hex.DecodeString(string(b)); err != nil {
+		result, err := hex.DecodeString(string(b))
+
+		if err != nil {
 			return err
-		} else {
-			*h = result
 		}
+
+		*h = result
 	}
+
 	return nil
 }
 
+// Value implements the driver.Valuer interface.
 func (h Hash) Value() (driver.Value, error) {
 	return h.String(), nil
 }
 
+// String implements the fmt.Stringer interface. It returns a string with hex encoding.
 func (h Hash) String() string {
 	return hex.EncodeToString(h)
 }
@@ -34,11 +41,17 @@ func (h Hash) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + h.String() + `"`), nil
 }
 
+func (h Hash) MarshalText() ([]byte, error) {
+	return []byte(h.String()), nil
+}
+
+// UnmarshalJSON implements the json.Marshaler interface.
 func (h *Hash) UnmarshalJSON(data []byte) error {
 	h.Scan(data)
 	return nil
 }
 
+// NewHash creates a new hash instance.
 func NewHash(h hash.Hash, items ...string) Hash {
 	for _, s := range items {
 		h.Write([]byte(s))
@@ -47,30 +60,17 @@ func NewHash(h hash.Hash, items ...string) Hash {
 	return h.Sum(nil)
 }
 
-func NewHashString(h hash.Hash, items ...string) string {
-	return NewHash(h, items...).String()
-}
-
+// MD5 creates a new MD5 hash.
 func MD5(items ...string) Hash {
 	return NewHash(md5.New(), items...)
 }
 
-func MD5String(items ...string) string {
-	return NewHashString(md5.New(), items...)
-}
-
+// SHA1 creates a new SHA1 hash.
 func SHA1(items ...string) Hash {
 	return NewHash(sha1.New(), items...)
 }
 
-func SHA1String(items ...string) string {
-	return NewHashString(sha1.New(), items...)
-}
-
+// SHA256 creates a new SHA256 hash.
 func SHA256(items ...string) Hash {
 	return NewHash(sha256.New(), items...)
-}
-
-func SHA256String(items ...string) string {
-	return NewHashString(sha256.New(), items...)
 }

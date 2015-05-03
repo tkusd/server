@@ -8,9 +8,11 @@ import (
 	"encoding/base64"
 
 	"code.google.com/p/go-uuid/uuid"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tommy351/app-studio-server/controller/common"
 	"github.com/tommy351/app-studio-server/model"
+	"github.com/tommy351/app-studio-server/model/types"
 	"github.com/tommy351/app-studio-server/util"
 )
 
@@ -18,15 +20,15 @@ func TestGetToken(t *testing.T) {
 	Convey("Success", t, func() {
 		user := new(model.User)
 		createTestUser(user, fixtureUsers[0])
-		defer model.DeleteUser(user)
+		defer user.Delete()
 
 		token := new(model.Token)
 		createTestToken(token, fixtureUsers[0])
-		defer model.DeleteToken(token)
+		defer token.Delete()
 
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set("Authorization", "Bearer "+token.GetBase64ID())
+		req.Header.Set("Authorization", "Bearer "+token.ID.String())
 
 		t, _ := GetToken(res, req)
 		So(t.ID, ShouldResemble, token.ID)
@@ -76,16 +78,17 @@ func TestGetToken(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
-	router := mux.NewRouter()
-	router.HandleFunc("/users/{id}", func(res http.ResponseWriter, req *http.Request) {
+	router := httprouter.New()
+
+	router.GET("/users/:user_id", common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if user, err := GetUser(res, req); err != nil {
-			util.HandleAPIError(res, err)
+			common.HandleAPIError(res, err)
 		} else {
-			util.RenderJSON(res, http.StatusOK, user)
+			common.RenderJSON(res, http.StatusOK, user)
 		}
-	})
+	}))
 
 	Convey("Success", t, func() {
 		res := httptest.NewRecorder()
@@ -118,16 +121,16 @@ func TestGetUser(t *testing.T) {
 func TestCheckUserPermission(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	token := new(model.Token)
 	createTestToken(token, fixtureUsers[0])
-	defer model.DeleteToken(token)
+	defer token.Delete()
 
 	Convey("Success", t, func() {
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set("Authorization", "Bearer "+token.GetBase64ID())
+		req.Header.Set("Authorization", "Bearer "+token.ID.String())
 
 		err := CheckUserPermission(res, req, user.ID)
 		So(err, ShouldBeNil)
@@ -148,13 +151,98 @@ func TestCheckUserPermission(t *testing.T) {
 	Convey("User ID does not match", t, func() {
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set("Authorization", "Bearer "+token.GetBase64ID())
+		req.Header.Set("Authorization", "Bearer "+token.ID.String())
 
-		err := CheckUserPermission(res, req, util.NewRandomUUID())
+		err := CheckUserPermission(res, req, types.NewRandomUUID())
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.UserForbiddenError,
 			Message: "You are forbidden to access this user.",
 			Status:  http.StatusForbidden,
+		})
+	})
+}
+
+func TestCheckUserExist(t *testing.T) {
+	user := new(model.User)
+	createTestUser(user, fixtureUsers[0])
+	defer user.Delete()
+
+	router := httprouter.New()
+	router.GET("/users/:user_id", common.ChainHandler(CheckUserExist, func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusNoContent)
+	}))
+
+	Convey("Success", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/users/"+user.ID.String(), nil)
+
+		router.ServeHTTP(res, req)
+
+		So(res.Code, ShouldEqual, http.StatusNoContent)
+	})
+
+	Convey("Failed", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/users/"+uuid.New(), nil)
+
+		router.ServeHTTP(res, req)
+
+		err := new(util.APIError)
+		parseJSON(res.Body, err)
+		So(res.Code, ShouldEqual, http.StatusNotFound)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.UserNotFoundError,
+			Message: "User not found.",
+		})
+	})
+}
+
+func TestGetProject(t *testing.T) {
+	user := new(model.User)
+	createTestUser(user, fixtureUsers[0])
+	defer user.Delete()
+
+	token := new(model.Token)
+	createTestToken(token, fixtureUsers[0])
+	defer token.Delete()
+
+	project := new(model.Project)
+	createTestProject(user, token, project, fixtureProjects[0])
+	defer project.Delete()
+
+	router := httprouter.New()
+	router.GET("/projects/:project_id", common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if project, err := GetProject(res, req); err != nil {
+			common.HandleAPIError(res, err)
+		} else {
+			common.RenderJSON(res, http.StatusOK, project)
+		}
+	}))
+
+	Convey("Success", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/projects/"+project.ID.String(), nil)
+
+		router.ServeHTTP(res, req)
+
+		p := new(model.Project)
+		So(res.Code, ShouldEqual, http.StatusOK)
+		parseJSON(res.Body, p)
+		So(p.ID, ShouldResemble, project.ID)
+	})
+
+	Convey("Failed", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/projects/"+uuid.New(), nil)
+
+		router.ServeHTTP(res, req)
+
+		err := new(util.APIError)
+		parseJSON(res.Body, err)
+		So(res.Code, ShouldEqual, http.StatusNotFound)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ProjectNotFoundError,
+			Message: "Project not found.",
 		})
 	})
 }

@@ -3,17 +3,16 @@ package model
 import (
 	"time"
 
-	"github.com/jmoiron/sqlx/types"
-
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/tommy351/app-studio-server/model/types"
 )
 
+// Element represents the data structure of a element.
 type Element struct {
-	ID         uuid.UUID
-	ProjectID  uuid.UUID
-	ElementID  uuid.UUID
+	ID         types.UUID
+	ProjectID  types.UUID
+	ElementID  types.UUID
 	Name       string
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
-	Attributes types.JsonText
+	Attributes types.JSONObject
 }

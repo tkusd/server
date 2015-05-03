@@ -4,40 +4,32 @@ import (
 	"net/http"
 
 	"github.com/codegangsta/negroni"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
+	"github.com/tommy351/app-studio-server/controller/common"
 )
 
+// Router returns a http.Handler.
 func Router() http.Handler {
 	n := negroni.New()
-	r := mux.NewRouter()
+	r := httprouter.New()
 
-	// Users collection
-	users := r.PathPrefix("/users").Subrouter()
-	users.Methods("POST").HandlerFunc(UserCreate)
+	r.POST("/users", common.WrapHandlerFunc(UserCreate))
+	r.GET("/users/:user_id", common.WrapHandlerFunc(UserShow))
+	r.PUT("/users/:user_id", common.WrapHandlerFunc(UserUpdate))
+	r.DELETE("/users/:user_id", common.WrapHandlerFunc(UserDestroy))
 
-	// Users singular
-	user := r.PathPrefix("/users/{id}").Subrouter()
-	user.Methods("GET").HandlerFunc(UserShow)
-	user.Methods("PUT", "PATCH").HandlerFunc(UserUpdate)
-	user.Methods("DELETE").HandlerFunc(UserDestroy)
-	user.Methods("GET").Path("/projects").HandlerFunc(ProjectList)
-	user.Methods("POST").Path("/projects").HandlerFunc(ProjectCreate)
+	r.GET("/users/:user_id/projects", common.ChainHandler(CheckUserExist, ProjectList))
+	r.POST("/users/:user_id/projects", common.ChainHandler(CheckUserExist, ProjectCreate))
+	r.GET("/projects/:project_id", common.WrapHandlerFunc(ProjectShow))
+	r.PUT("/projects/:project_id", common.WrapHandlerFunc(ProjectUpdate))
+	r.DELETE("/projects/:project_id", common.WrapHandlerFunc(ProjectDestroy))
 
-	// Tokens collection
-	tokens := r.PathPrefix("/tokens").Subrouter()
-	tokens.Methods("POST").HandlerFunc(TokenCreate)
+	r.POST("/tokens", common.WrapHandlerFunc(TokenCreate))
+	r.DELETE("/tokens/:key", common.WrapHandlerFunc(TokenDestroy))
 
-	// Tokens singular
-	token := r.PathPrefix("/tokens/{key}").Subrouter()
-	token.Methods("DELETE").HandlerFunc(TokenDestroy)
+	r.NotFound = common.NotFound
 
-	// Projects singular
-	project := r.PathPrefix("/projects/{id}").Subrouter()
-	project.Methods("GET").HandlerFunc(ProjectShow)
-	project.Methods("PUT", "PATCH").HandlerFunc(ProjectUpdate)
-	project.Methods("DELETE").HandlerFunc(ProjectDestroy)
-	project.Methods("GET").Path("/full").HandlerFunc(ProjectFull)
-
+	n.Use(common.NewRecovery())
 	n.UseHandler(r)
 
 	return n

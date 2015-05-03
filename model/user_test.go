@@ -1,7 +1,7 @@
 package model
 
 import (
-	"net/http"
+	"strings"
 	"testing"
 
 	"time"
@@ -9,22 +9,23 @@ import (
 	"log"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/tommy351/app-studio-server/model/types"
 	"github.com/tommy351/app-studio-server/util"
 )
 
-func createTestUser() (*User, error) {
+func createTestUser(data fixtureUser) (*User, error) {
 	user := &User{
-		Name:  "abc",
-		Email: "abc@example.com",
+		Name:  data.Name,
+		Email: data.Email,
 	}
 
-	if err := user.GeneratePassword("123456"); err != nil {
+	if err := user.GeneratePassword(data.Password); err != nil {
 		return nil, err
 	}
 
 	user.SetActivated(false)
 
-	if err := CreateUser(user); err != nil {
+	if err := user.Save(); err != nil {
 		return nil, err
 	}
 
@@ -33,38 +34,177 @@ func createTestUser() (*User, error) {
 
 func TestUser(t *testing.T) {
 	Convey("BeforeSave", t, func() {
+		now := time.Now()
+		user := &User{}
+		user.BeforeSave()
+		So(user.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
+	})
+
+	Convey("BeforeCreate", t, func() {
+		now := time.Now()
+		user := &User{}
+		user.BeforeCreate()
+		So(user.CreatedAt.Time, ShouldHappenOnOrAfter, now)
+	})
+
+	Convey("Save", t, func() {
 		Convey("Trim name", func() {
-			user := &User{Name: "  abc  "}
-			user.BeforeSave()
+			user := &User{Name: "   abc   "}
+			user.Save()
+			defer user.Delete()
 			So(user.Name, ShouldEqual, "abc")
 		})
 
 		Convey("Trim email", func() {
-			user := &User{Email: "  abc@example.com   "}
-			user.BeforeSave()
-			So(user.Email, ShouldEqual, "abc@example.com")
+			user := &User{Email: "   abc@we.com  "}
+			user.Save()
+			defer user.Delete()
+			So(user.Email, ShouldEqual, "abc@we.com")
 		})
 
 		Convey("Trim avatar", func() {
-			user := &User{Avatar: "   http://example.com/test.jpg  "}
-			user.BeforeSave()
+			user := &User{Avatar: "   http://example.com/test.jpg   "}
+			user.Save()
+			defer user.Delete()
 			So(user.Avatar, ShouldEqual, "http://example.com/test.jpg")
 		})
 
-		Convey("Update modified time", func() {
-			now := time.Now()
+		Convey("Name is required", func() {
 			user := &User{}
-			user.BeforeSave()
-			So(user.UpdatedAt, ShouldHappenOnOrAfter, now)
+			err := user.Save()
+			So(err, ShouldResemble, &util.APIError{
+				Field:   "name",
+				Code:    util.RequiredError,
+				Message: "Name is required.",
+			})
+		})
+
+		Convey("Maximum length of name is 100", func() {
+			user := &User{Name: strings.Repeat("a", 101)}
+			err := user.Save()
+
+			So(err, ShouldResemble, &util.APIError{
+				Field:   "name",
+				Code:    util.LengthError,
+				Message: "Maximum length of name is 100.",
+			})
+		})
+
+		Convey("Email is invalid", func() {
+			user := &User{
+				Name:  "abc",
+				Email: "abc@",
+			}
+			err := user.Save()
+
+			So(err, ShouldResemble, &util.APIError{
+				Field:   "email",
+				Code:    util.EmailError,
+				Message: "Email is invalid.",
+			})
+		})
+
+		Convey("Avatar URL is invalid", func() {
+			user := &User{
+				Name:   "abc",
+				Email:  "abc@example.com",
+				Avatar: "ht://erw",
+			}
+			err := user.Save()
+
+			So(err, ShouldResemble, &util.APIError{
+				Field:   "avatar",
+				Code:    util.URLError,
+				Message: "Avatar URL is invalid.",
+			})
+		})
+
+		Convey("Create", func() {
+			now := time.Now().Truncate(time.Second)
+			user, err := createTestUser(fixtureUsers[0])
+			defer user.Delete()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			u, _ := GetUser(user.ID)
+			So(u.ID, ShouldResemble, user.ID)
+			So(u.Name, ShouldEqual, user.Name)
+			So(u.Email, ShouldEqual, user.Email)
+			So(u.Avatar, ShouldEqual, util.Gravatar(u.Email))
+			So(u.CreatedAt.Time, ShouldHappenOnOrAfter, now)
+			So(u.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
+			So(u.IsActivated, ShouldBeFalse)
+			So(u.ActivationToken, ShouldNotBeEmpty)
+		})
+
+		Convey("Update", func() {
+			user, err := createTestUser(fixtureUsers[0])
+			defer user.Delete()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			newName := "new name"
+			now := time.Now().Truncate(time.Second)
+			user.Name = newName
+			err = user.Save()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			u, _ := GetUser(user.ID)
+			So(u.Name, ShouldEqual, newName)
+			So(u.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
+		})
+
+		Convey("Email is used", func() {
+			user, err := createTestUser(fixtureUsers[0])
+			defer user.Delete()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			_, err = createTestUser(fixtureUsers[0])
+			So(err, ShouldResemble, &util.APIError{
+				Code:    util.EmailUsedError,
+				Message: "Email has been used.",
+				Field:   "email",
+			})
 		})
 	})
 
-	Convey("BeforeCreate", t, func() {
-		Convey("Give created time", func() {
-			now := time.Now()
-			user := &User{}
-			user.BeforeCreate()
-			So(user.CreatedAt, ShouldHappenOnOrAfter, now)
+	Convey("Delete", t, func() {
+		user, err := createTestUser(fixtureUsers[0])
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		user.Delete()
+		u, _ := GetUser(user.ID)
+		So(u, ShouldBeNil)
+	})
+
+	Convey("Exists", t, func() {
+		Convey("true", func() {
+			user, err := createTestUser(fixtureUsers[0])
+			defer user.Delete()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			So(user.Exists(), ShouldBeTrue)
+		})
+
+		Convey("false", func() {
+			user := &User{ID: types.NewRandomUUID()}
+			So(user.Exists(), ShouldBeFalse)
 		})
 	})
 
@@ -83,10 +223,42 @@ func TestUser(t *testing.T) {
 		})
 	})
 
+	var validatePasswordTests = []struct {
+		name     string
+		password string
+		err      error
+	}{
+		{"Password is required", "", &util.APIError{
+			Code:    util.RequiredError,
+			Field:   "password",
+			Message: "Password is required.",
+		}},
+		{"Minimum length of password is 6", strings.Repeat("a", 5), &util.APIError{
+			Code:    util.LengthError,
+			Field:   "password",
+			Message: "The length of password must be between 6 to 50.",
+		}},
+		{"Maximum length of password is 50", strings.Repeat("a", 51), &util.APIError{
+			Code:    util.LengthError,
+			Field:   "password",
+			Message: "The length of password must be between 6 to 50.",
+		}},
+	}
+
 	Convey("GeneratePassword", t, func() {
-		user := &User{}
-		user.GeneratePassword("123456")
-		So(user.Password, ShouldNotBeEmpty)
+		Convey("Success", func() {
+			user := &User{}
+			user.GeneratePassword("123456")
+			So(user.Password, ShouldNotBeEmpty)
+		})
+
+		for _, test := range validatePasswordTests {
+			Convey(test.name, func() {
+				user := &User{}
+				err := user.GeneratePassword(test.password)
+				So(err, ShouldResemble, test.err)
+			})
+		}
 	})
 
 	Convey("Authenticate", t, func() {
@@ -104,115 +276,23 @@ func TestUser(t *testing.T) {
 			So(err, ShouldResemble, &util.APIError{
 				Field:   "password",
 				Code:    util.WrongPasswordError,
-				Message: "Password is wrong",
-				Status:  http.StatusUnauthorized,
+				Message: "Password is wrong.",
 			})
 		})
-	})
-}
 
-func TestValidatePassword(t *testing.T) {
-	Convey("Success", t, func() {
-		err := validatePassword("123456")
-		So(err, ShouldBeNil)
-	})
-
-	Convey("Password is required", t, func() {
-		err := validatePassword("")
-
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.RequiredError,
-			Field:   "password",
-			Message: "Password is required.",
-		})
-	})
-
-	Convey("Minimum length of password is 6", t, func() {
-		err := validatePassword("12345")
-
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.LengthError,
-			Field:   "password",
-			Message: "The length of password must be between 6 to 50.",
-		})
-	})
-
-	Convey("Maximum length of password is 50", t, func() {
-		err := validatePassword("12346545341354354135431354354dgfmgdjfgoierterterttt")
-
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.LengthError,
-			Field:   "password",
-			Message: "The length of password must be between 6 to 50.",
-		})
-	})
-}
-
-func TestValidateUser(t *testing.T) {
-	Convey("Name is required", t, func() {
-		user := &User{}
-		err := validateUser(user)
-
-		So(err, ShouldResemble, &util.APIError{
-			Field:   "name",
-			Code:    util.RequiredError,
-			Message: "Name is required.",
-		})
-	})
-
-	Convey("Maximum length of name is 100", t, func() {
-		user := &User{Name: "adijosjfosejfoeijfroiejrowijerowjerowiejrowiejrowiejrowiejroweirjoweijrwoeirjwerwrjwioerjwoerwerrrrrr"}
-		err := validateUser(user)
-
-		So(err, ShouldResemble, &util.APIError{
-			Field:   "name",
-			Code:    util.LengthError,
-			Message: "Maximum length of name is 100.",
-		})
-	})
-
-	Convey("Email is invalid", t, func() {
-		user := &User{
-			Name:  "abc",
-			Email: "abc@",
+		for _, test := range validatePasswordTests {
+			Convey(test.name, func() {
+				user := &User{}
+				err := user.Authenticate(test.password)
+				So(err, ShouldResemble, test.err)
+			})
 		}
-		err := validateUser(user)
-
-		So(err, ShouldResemble, &util.APIError{
-			Field:   "email",
-			Code:    util.EmailError,
-			Message: "Email is invalid.",
-		})
-	})
-
-	Convey("Avatar URL is invalid", t, func() {
-		user := &User{
-			Name:   "abc",
-			Email:  "abc@example.com",
-			Avatar: "ht://erw",
-		}
-		err := validateUser(user)
-
-		So(err, ShouldResemble, &util.APIError{
-			Field:   "avatar",
-			Code:    util.URLError,
-			Message: "Avatar URL is invalid.",
-		})
-	})
-
-	Convey("Define avatar from email", t, func() {
-		user := &User{
-			Name:  "abc",
-			Email: "abc@example.com",
-		}
-		validateUser(user)
-		So(user.Avatar, ShouldEqual, util.Gravatar(user.Email))
 	})
 }
 
 func TestGetUser(t *testing.T) {
-	user, err := createTestUser()
-	defer DeleteUser(user)
+	user, err := createTestUser(fixtureUsers[0])
+	defer user.Delete()
 
 	if err != nil {
 		log.Fatal(err)
@@ -230,90 +310,23 @@ func TestGetUser(t *testing.T) {
 		So(result.Email, ShouldEqual, user.Email)
 		So(result.Avatar, ShouldEqual, user.Avatar)
 		So(result.Password, ShouldResemble, user.Password)
-		So(util.ISOTime(result.CreatedAt), ShouldResemble, util.ISOTime(user.CreatedAt))
-		So(util.ISOTime(result.UpdatedAt), ShouldResemble, util.ISOTime(user.UpdatedAt))
+		So(result.CreatedAt.ISOTime(), ShouldResemble, user.CreatedAt.ISOTime())
+		So(result.UpdatedAt.ISOTime(), ShouldResemble, user.UpdatedAt.ISOTime())
+		// So(util.ISOTime(result.CreatedAt), ShouldResemble, util.ISOTime(user.CreatedAt))
+		// So(util.ISOTime(result.UpdatedAt), ShouldResemble, util.ISOTime(user.UpdatedAt))
 		So(user.IsActivated, ShouldEqual, user.IsActivated)
 		So(user.ActivationToken, ShouldResemble, user.ActivationToken)
 	})
 
 	Convey("Failed", t, func() {
-		_, err := GetUser(util.NewRandomUUID())
+		_, err := GetUser(types.NewRandomUUID())
 		So(err, ShouldNotBeNil)
 	})
 }
 
-func TestCreateUser(t *testing.T) {
-	Convey("Success", t, func() {
-		user, err := createTestUser()
-		defer DeleteUser(user)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		So(user, ShouldNotBeNil)
-	})
-
-	Convey("Email is used", t, func() {
-		user, err := createTestUser()
-		defer DeleteUser(user)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		_, err = createTestUser()
-
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.EmailUsedError,
-			Status:  http.StatusBadRequest,
-			Message: "Email has been used.",
-			Field:   "email",
-		})
-	})
-}
-
-func TestUpdateUser(t *testing.T) {
-	user, err := createTestUser()
-	defer DeleteUser(user)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	Convey("Success", t, func() {
-		user.Name = "new name"
-		UpdateUser(user)
-
-		newUser, err := GetUser(user.ID)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		So(newUser.Name, ShouldEqual, user.Name)
-	})
-
-	SkipConvey("Email is used", t, nil)
-}
-
-func TestDeleteUser(t *testing.T) {
-	user, err := createTestUser()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	Convey("Success", t, func() {
-		DeleteUser(user)
-		user, _ := GetUser(user.ID)
-		So(user, ShouldBeNil)
-	})
-}
-
 func TestGetUserByEmail(t *testing.T) {
-	user, err := createTestUser()
-	defer DeleteUser(user)
+	user, err := createTestUser(fixtureUsers[0])
+	defer user.Delete()
 
 	if err != nil {
 		log.Fatal(err)

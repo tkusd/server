@@ -4,35 +4,36 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/gorilla/mux"
 	"github.com/mholt/binding"
+	"github.com/tommy351/app-studio-server/controller/common"
 	"github.com/tommy351/app-studio-server/model"
 	"github.com/tommy351/app-studio-server/util"
 )
 
-type TokenForm struct {
+type tokenForm struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (form *TokenForm) FieldMap() binding.FieldMap {
+func (form *tokenForm) FieldMap() binding.FieldMap {
 	return binding.FieldMap{
 		&form.Email:    "email",
 		&form.Password: "password",
 	}
 }
 
+// TokenCreate handles POST /tokens.
 func TokenCreate(res http.ResponseWriter, req *http.Request) {
-	form := new(TokenForm)
+	form := new(tokenForm)
 
-	if util.BindForm(res, req, form) {
+	if common.BindForm(res, req, form) {
 		return
 	}
 
 	var user *model.User
 
 	if form.Email == "" {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Code:    util.RequiredError,
 			Message: "Email is required.",
 			Field:   "email",
@@ -41,7 +42,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if !govalidator.IsEmail(form.Email) {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Code:    util.EmailError,
 			Message: "Email is invalid.",
 			Field:   "email",
@@ -50,7 +51,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if user, _ = model.GetUserByEmail(form.Email); user == nil {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Field:   "email",
 			Code:    util.UserNotFoundError,
 			Message: "User does not exist.",
@@ -59,39 +60,41 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := user.Authenticate(form.Password); err != nil {
-		util.HandleAPIError(res, err)
+		common.HandleAPIError(res, err)
 		return
 	}
 
 	token := &model.Token{UserID: user.ID}
 
-	if err := model.CreateToken(token); err != nil {
-		util.HandleAPIError(res, err)
+	if err := token.Save(); err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
-	util.NoCacheHeader(res)
-	util.RenderJSON(res, http.StatusCreated, token)
+	common.NoCacheHeader(res)
+	common.RenderJSON(res, http.StatusCreated, token)
 }
 
+// TokenDestroy handles DELETE /tokens/:key.
 func TokenDestroy(res http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+	key := common.GetParam(req, "key")
 
-	if key, ok := vars["key"]; ok {
-		if token, err := model.GetTokenBase64(key); err != nil {
-			util.HandleAPIError(res, &util.APIError{
-				Code:    util.TokenNotFoundError,
-				Message: "Token does not exist.",
-				Status:  http.StatusNotFound,
-			})
-			return
-		} else {
-			if err := model.DeleteToken(token); err != nil {
-				util.HandleAPIError(res, err)
-				return
-			}
+	token, err := model.GetTokenBase64(key)
 
-			res.WriteHeader(http.StatusNoContent)
-		}
+	if err != nil {
+		common.HandleAPIError(res, &util.APIError{
+			Code:    util.TokenNotFoundError,
+			Message: "Token does not exist.",
+			Status:  http.StatusNotFound,
+		})
+
+		return
 	}
+
+	if err := token.Delete(); err != nil {
+		common.HandleAPIError(res, err)
+		return
+	}
+
+	res.WriteHeader(http.StatusNoContent)
 }

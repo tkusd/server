@@ -4,18 +4,19 @@ import (
 	"net/http"
 
 	"github.com/mholt/binding"
+	"github.com/tommy351/app-studio-server/controller/common"
 	"github.com/tommy351/app-studio-server/model"
 	"github.com/tommy351/app-studio-server/util"
 )
 
-type UserForm struct {
+type userForm struct {
 	Name        *string `json:"name"`
 	Email       *string `json:"email"`
 	Password    *string `json:"password"`
 	OldPassword *string `json:"old_password"`
 }
 
-func (form *UserForm) FieldMap() binding.FieldMap {
+func (form *userForm) FieldMap() binding.FieldMap {
 	return binding.FieldMap{
 		&form.Name:        "name",
 		&form.Email:       "email",
@@ -24,15 +25,16 @@ func (form *UserForm) FieldMap() binding.FieldMap {
 	}
 }
 
+// UserCreate handles POST /users.
 func UserCreate(res http.ResponseWriter, req *http.Request) {
-	form := new(UserForm)
+	form := new(userForm)
 
-	if util.BindForm(res, req, form) {
+	if common.BindForm(res, req, form) {
 		return
 	}
 
 	if form.Name == nil {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Field:   "name",
 			Code:    util.RequiredError,
 			Message: "Name is required.",
@@ -41,7 +43,7 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Email == nil {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Field:   "email",
 			Code:    util.RequiredError,
 			Message: "Email is required.",
@@ -50,7 +52,7 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Password == nil {
-		util.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, &util.APIError{
 			Field:   "password",
 			Code:    util.RequiredError,
 			Message: "Password is required.",
@@ -64,49 +66,55 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := user.GeneratePassword(*form.Password); err != nil {
-		util.HandleAPIError(res, err)
+		common.HandleAPIError(res, err)
 		return
 	}
 
 	user.SetActivated(false)
 
-	if err := model.CreateUser(user); err != nil {
-		util.HandleAPIError(res, err)
+	if err := user.Save(); err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
-	util.RenderJSON(res, http.StatusCreated, user)
+	common.RenderJSON(res, http.StatusCreated, user)
 }
 
+// UserShow handles GET /users/:user_id.
 func UserShow(res http.ResponseWriter, req *http.Request) {
-	if user, err := GetUser(res, req); err != nil {
-		util.HandleAPIError(res, err)
+	user, err := GetUser(res, req)
+
+	if err != nil {
+		common.HandleAPIError(res, err)
+		return
+	}
+
+	err = CheckUserPermission(res, req, user.ID)
+
+	if err == nil {
+		common.RenderJSON(res, http.StatusOK, user)
 	} else {
-		if e := CheckUserPermission(res, req, user.ID); e == nil {
-			util.RenderJSON(res, http.StatusOK, user)
-		} else {
-			util.RenderJSON(res, http.StatusOK, user.PublicProfile())
-		}
+		common.RenderJSON(res, http.StatusOK, user.PublicProfile())
 	}
 }
 
+// UserUpdate handles PUT /users/:user_id.
 func UserUpdate(res http.ResponseWriter, req *http.Request) {
-	form := new(UserForm)
+	form := new(userForm)
 
-	if util.BindForm(res, req, form) {
+	if common.BindForm(res, req, form) {
 		return
 	}
 
-	var user *model.User
-	var err error
+	user, err := GetUser(res, req)
 
-	if user, err = GetUser(res, req); err != nil {
-		util.HandleAPIError(res, err)
+	if err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
-	if err = CheckUserPermission(res, req, user.ID); err != nil {
-		util.HandleAPIError(res, err)
+	if err := CheckUserPermission(res, req, user.ID); err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
@@ -116,7 +124,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 
 	if form.Password != nil {
 		if form.OldPassword == nil {
-			util.HandleAPIError(res, &util.APIError{
+			common.HandleAPIError(res, &util.APIError{
 				Field:   "old_password",
 				Code:    util.RequiredError,
 				Message: "Current password is required.",
@@ -125,7 +133,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if err := user.Authenticate(*form.OldPassword); err != nil {
-			util.HandleAPIError(res, &util.APIError{
+			common.HandleAPIError(res, &util.APIError{
 				Field:   "old_password",
 				Code:    util.WrongPasswordError,
 				Message: "Password is wrong.",
@@ -134,7 +142,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if err := user.GeneratePassword(*form.Password); err != nil {
-			util.HandleAPIError(res, err)
+			common.HandleAPIError(res, err)
 			return
 		}
 	}
@@ -143,30 +151,30 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 		user.Email = *form.Email
 	}
 
-	if err := model.UpdateUser(user); err != nil {
-		util.HandleAPIError(res, err)
+	if err := user.Save(); err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
-	util.RenderJSON(res, http.StatusOK, user)
+	common.RenderJSON(res, http.StatusOK, user)
 }
 
+// UserDestroy handles DELETE /users/:user_id.
 func UserDestroy(res http.ResponseWriter, req *http.Request) {
-	var user *model.User
-	var err error
+	user, err := GetUser(res, req)
 
-	if user, err = GetUser(res, req); err != nil {
-		util.HandleAPIError(res, err)
+	if err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, user.ID); err != nil {
-		util.HandleAPIError(res, err)
+		common.HandleAPIError(res, err)
 		return
 	}
 
-	if err := model.DeleteUser(user); err != nil {
-		util.HandleAPIError(res, err)
+	if err := user.Delete(); err != nil {
+		common.HandleAPIError(res, err)
 		return
 	}
 

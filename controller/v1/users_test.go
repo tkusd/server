@@ -34,7 +34,7 @@ func TestUserCreate(t *testing.T) {
 		user := new(model.User)
 		now := time.Now().Truncate(time.Second)
 		r := createTestUser(user, fixtureUsers[0])
-		defer model.DeleteUser(user)
+		defer user.Delete()
 
 		So(r.Code, ShouldEqual, http.StatusCreated)
 		So(user.Name, ShouldEqual, fixtureUsers[0].Name)
@@ -42,8 +42,8 @@ func TestUserCreate(t *testing.T) {
 		So(user.IsActivated, ShouldBeFalse)
 		So(user.Avatar, ShouldEqual, util.Gravatar(fixtureUsers[0].Email))
 		So(user.Password, ShouldBeEmpty)
-		So(user.CreatedAt, ShouldHappenOnOrAfter, now)
-		So(user.UpdatedAt, ShouldHappenOnOrAfter, now)
+		So(user.CreatedAt.Time, ShouldHappenOnOrAfter, now)
+		So(user.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
 
 		realUser, err := model.GetUser(user.ID)
 
@@ -56,56 +56,64 @@ func TestUserCreate(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("Name is required", t, func() {
-		err := new(util.APIError)
-		r := createTestUser(err, map[string]interface{}{})
+	var errorTests = []struct {
+		name string
+		data map[string]interface{}
+		err  error
+	}{
+		{
+			name: "Name is required",
+			data: map[string]interface{}{},
+			err: &util.APIError{
+				Code:    util.RequiredError,
+				Message: "Name is required.",
+				Field:   "name",
+			},
+		},
+		{
+			name: "Email is required",
+			data: map[string]interface{}{
+				"name": "abc",
+			},
+			err: &util.APIError{
+				Code:    util.RequiredError,
+				Message: "Email is required.",
+				Field:   "email",
+			},
+		},
+		{
+			name: "Password is required",
+			data: map[string]interface{}{
+				"name":  "abc",
+				"email": "abc@example.com",
+			},
+			err: &util.APIError{
+				Code:    util.RequiredError,
+				Message: "Password is required.",
+				Field:   "password",
+			},
+		},
+	}
 
-		So(r.Code, ShouldEqual, http.StatusBadRequest)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.RequiredError,
-			Message: "Name is required.",
-			Field:   "name",
-		})
-	})
+	for _, test := range errorTests {
+		Convey(test.name, t, func() {
+			err := new(util.APIError)
+			r := createTestUser(err, test.data)
 
-	Convey("Email is required", t, func() {
-		err := new(util.APIError)
-		r := createTestUser(err, map[string]interface{}{
-			"name": "abc",
+			So(r.Code, ShouldEqual, http.StatusBadRequest)
+			So(err, ShouldResemble, err)
 		})
-
-		So(r.Code, ShouldEqual, http.StatusBadRequest)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.RequiredError,
-			Message: "Email is required.",
-			Field:   "email",
-		})
-	})
-
-	Convey("Password is required", t, func() {
-		err := new(util.APIError)
-		r := createTestUser(err, map[string]interface{}{
-			"name":  "abc",
-			"email": "abc@example.com",
-		})
-
-		So(r.Code, ShouldEqual, http.StatusBadRequest)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.RequiredError,
-			Message: "Password is required.",
-			Field:   "password",
-		})
-	})
+	}
 }
 
 func TestUserShow(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	token := new(model.Token)
 	createTestToken(token, fixtureUsers[0])
-	defer model.DeleteToken(token)
+	defer token.Delete()
 
 	Convey("Success (private)", t, func() {
 		u := new(model.User)
@@ -113,7 +121,7 @@ func TestUserShow(t *testing.T) {
 			Method: "GET",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 		})
 
@@ -123,8 +131,8 @@ func TestUserShow(t *testing.T) {
 		So(u.Name, ShouldEqual, user.Name)
 		So(u.Email, ShouldEqual, user.Email)
 		So(u.Avatar, ShouldEqual, user.Avatar)
-		So(u.CreatedAt, ShouldResemble, user.CreatedAt.Truncate(time.Second))
-		So(u.UpdatedAt, ShouldResemble, user.UpdatedAt.Truncate(time.Second))
+		So(u.CreatedAt.Time, ShouldResemble, user.CreatedAt.Truncate(time.Second))
+		So(u.UpdatedAt.Time, ShouldResemble, user.UpdatedAt.Truncate(time.Second))
 		So(u.IsActivated, ShouldEqual, user.IsActivated)
 		So(u.Password, ShouldBeEmpty)
 		So(u.ActivationToken, ShouldBeEmpty)
@@ -147,7 +155,7 @@ func TestUserShow(t *testing.T) {
 			Method: "GET",
 			URL:    "/users/" + uuid.New(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 		})
 
@@ -164,19 +172,19 @@ func TestUserShow(t *testing.T) {
 func TestUserUpdate(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	user2 := new(model.User)
 	createTestUser(user2, fixtureUsers[1])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	token := new(model.Token)
 	createTestToken(token, fixtureUsers[0])
-	defer model.DeleteToken(token)
+	defer token.Delete()
 
 	token2 := new(model.Token)
 	createTestToken(token2, fixtureUsers[1])
-	defer model.DeleteToken(token2)
+	defer token2.Delete()
 
 	Convey("Success", t, func() {
 		now := time.Now().Truncate(time.Second)
@@ -185,7 +193,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{},
 		})
@@ -196,8 +204,8 @@ func TestUserUpdate(t *testing.T) {
 		So(u.Name, ShouldEqual, user.Name)
 		So(u.Email, ShouldEqual, user.Email)
 		So(u.Avatar, ShouldEqual, user.Avatar)
-		So(u.CreatedAt, ShouldResemble, user.CreatedAt.Truncate(time.Second))
-		So(u.UpdatedAt, ShouldHappenOnOrAfter, now)
+		So(u.CreatedAt.Time, ShouldResemble, user.CreatedAt.Truncate(time.Second))
+		So(u.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
 		So(u.IsActivated, ShouldEqual, user.IsActivated)
 		So(u.Password, ShouldBeEmpty)
 		So(u.ActivationToken, ShouldBeEmpty)
@@ -212,7 +220,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{
 				"name": newName,
@@ -234,7 +242,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{
 				"email": newEmail,
@@ -256,7 +264,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{
 				"password":     newPassword,
@@ -279,7 +287,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{
 				"password": fixtureUsers[0].Password,
@@ -301,7 +309,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{
 				"password":     fixtureUsers[0].Password,
@@ -324,7 +332,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token2.GetBase64ID(),
+				"Authorization": "Bearer " + token2.ID.String(),
 			},
 			Body: map[string]interface{}{},
 		})
@@ -343,7 +351,7 @@ func TestUserUpdate(t *testing.T) {
 			Method: "PUT",
 			URL:    "/users/" + uuid.New(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 			Body: map[string]interface{}{},
 		})
@@ -360,26 +368,26 @@ func TestUserUpdate(t *testing.T) {
 func TestUserDestroy(t *testing.T) {
 	user := new(model.User)
 	createTestUser(user, fixtureUsers[0])
-	defer model.DeleteUser(user)
+	defer user.Delete()
 
 	user2 := new(model.User)
 	createTestUser(user2, fixtureUsers[1])
-	defer model.DeleteUser(user2)
+	defer user.Delete()
 
 	token := new(model.Token)
 	createTestToken(token, fixtureUsers[0])
-	defer model.DeleteToken(token)
+	defer token.Delete()
 
 	token2 := new(model.Token)
 	createTestToken(token2, fixtureUsers[1])
-	defer model.DeleteToken(token2)
+	defer token2.Delete()
 
 	Convey("Success", t, func() {
 		r := request(&requestOptions{
 			Method: "DELETE",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 		})
 
@@ -398,7 +406,7 @@ func TestUserDestroy(t *testing.T) {
 			Method: "DELETE",
 			URL:    "/users/" + user.ID.String(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token2.GetBase64ID(),
+				"Authorization": "Bearer " + token2.ID.String(),
 			},
 		})
 
@@ -416,7 +424,7 @@ func TestUserDestroy(t *testing.T) {
 			Method: "DELETE",
 			URL:    "/users/" + uuid.New(),
 			Headers: map[string]string{
-				"Authorization": "Bearer " + token.GetBase64ID(),
+				"Authorization": "Bearer " + token.ID.String(),
 			},
 		})
 

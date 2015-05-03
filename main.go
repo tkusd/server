@@ -1,20 +1,17 @@
 package main
 
 import (
-	"github.com/codegangsta/negroni"
-	"github.com/phyber/negroni-gzip/gzip"
+	"net/http"
+
 	"github.com/tommy351/app-studio-server/controller"
+	"github.com/tommy351/app-studio-server/util"
 )
 
 func main() {
-	n := negroni.Classic()
+	r := controller.Router()
+	log := util.Log()
+	addr := ":3000"
 
-	// Middlewares
-	n.Use(gzip.Gzip(gzip.DefaultCompression))
-
-	// Register routes
-	n.UseHandler(controller.Router())
-
-	// Start listening
-	n.Run(":3000")
+	log.Infof("Listening on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, r))
 }

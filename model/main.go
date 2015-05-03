@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"log"
 
 	"path/filepath"
@@ -12,9 +13,19 @@ import (
 	"github.com/tommy351/app-studio-server/util"
 )
 
-const DB_DIR = "db"
+const (
+	databaseDir  = "db"
+	defaultLimit = 30
+)
 
 var db gorm.DB
+
+// QueryOption is the query options.
+type QueryOption struct {
+	Offset int
+	Limit  int
+	Order  string
+}
 
 func init() {
 	var dbconf *goose.DBConf
@@ -25,7 +36,7 @@ func init() {
 		env = "development"
 	}
 
-	dbconf, err = goose.NewDBConf(filepath.Join(util.GetBaseDir(), DB_DIR), env, "")
+	dbconf, err = goose.NewDBConf(filepath.Join(util.GetBaseDir(), databaseDir), env, "")
 
 	if err != nil {
 		log.Fatal(err)
@@ -36,4 +47,10 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func exists(table string, id string) bool {
+	var result sql.NullBool
+	db.Raw("SELECT exists(SELECT 1 FROM "+table+" WHERE id = ?)", id).Row().Scan(&result)
+	return result.Bool
 }

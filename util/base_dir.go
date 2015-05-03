@@ -7,10 +7,11 @@ var (
 	baseDir = os.Getenv("CWD")
 )
 
+// GetBaseDir returns the path of project directory
 func GetBaseDir() string {
 	if baseDir == "" {
 		return osWd
-	} else {
-		return baseDir
 	}
+
+	return baseDir
 }

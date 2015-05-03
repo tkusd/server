@@ -1,37 +1,39 @@
-package util
+package common
 
 import (
 	"net/http"
 
 	"github.com/mholt/binding"
+	"github.com/tommy351/app-studio-server/util"
 )
 
+// BindForm binds data to the struct.
 func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMapper) bool {
 	if err := binding.Bind(req, mapper); err != nil {
-		firstErr := err[0]
-		code := UnknownError
+		e := err[0]
+		code := util.UnknownError
 
-		switch firstErr.Classification {
+		switch e.Classification {
 		case binding.ContentTypeError:
-			code = ContentTypeError
+			code = util.ContentTypeError
 			break
 
 		case binding.DeserializationError:
-			code = DeserializationError
+			code = util.DeserializationError
 			break
 
 		case binding.RequiredError:
-			code = RequiredError
+			code = util.RequiredError
 			break
 
 		case binding.TypeError:
-			code = TypeError
+			code = util.TypeError
 			break
 		}
 
-		RenderJSON(res, http.StatusBadRequest, APIError{
+		HandleAPIError(res, &util.APIError{
 			Code:    code,
-			Message: firstErr.Message,
+			Message: e.Message,
 		})
 
 		return true

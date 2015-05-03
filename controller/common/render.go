@@ -1,4 +1,4 @@
-package util
+package common
 
 import (
 	"encoding/json"
@@ -6,18 +6,15 @@ import (
 	"strconv"
 )
 
+// RenderJSON renders JSON and add corresponding header to the response.
 func RenderJSON(res http.ResponseWriter, status int, value interface{}) {
-	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Content-Type", "application/json")
 
 	if result, err := json.Marshal(value); err == nil {
 		res.WriteHeader(status)
 		res.Header().Set("Content-Length", strconv.Itoa(len(result)))
 		res.Write(result)
 	} else {
-		HandleAPIError(res, &APIError{
-			Code:    ServerError,
-			Message: "Server error",
-			Status:  http.StatusInternalServerError,
-		})
+		panic(err)
 	}
 }
