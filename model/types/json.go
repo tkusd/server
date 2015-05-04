@@ -11,7 +11,7 @@ type JSONObject map[string]interface{}
 // Scan implements the sql.Scanner interface.
 func (j *JSONObject) Scan(val interface{}) error {
 	if b, ok := val.([]byte); ok {
-		return json.Unmarshal(b, *j)
+		return json.Unmarshal(b, j)
 	}
 
 	return nil
@@ -28,7 +28,7 @@ type JSONArray []interface{}
 // Scan implements the sql.Scanner interface.
 func (j *JSONArray) Scan(val interface{}) error {
 	if b, ok := val.([]byte); ok {
-		return json.Unmarshal(b, *j)
+		return json.Unmarshal(b, j)
 	}
 
 	return nil

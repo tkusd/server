@@ -108,9 +108,8 @@ func TestProject(t *testing.T) {
 			newTitle := "new title"
 			now := time.Now().Truncate(time.Second)
 			project.Title = newTitle
-			err = project.Save()
 
-			if err != nil {
+			if err := project.Save(); err != nil {
 				log.Fatal(err)
 			}
 

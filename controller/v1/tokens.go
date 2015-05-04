@@ -77,7 +77,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 
 // TokenDestroy handles DELETE /tokens/:key.
 func TokenDestroy(res http.ResponseWriter, req *http.Request) {
-	key := common.GetParam(req, "key")
+	key := common.GetParam(req, keyParam)
 
 	token, err := model.GetTokenBase64(key)
 

@@ -12,9 +12,9 @@ import (
 
 // ProjectList handles GET /users/:user_id/projects.
 func ProjectList(res http.ResponseWriter, req *http.Request) {
-	userID := types.ParseUUID(common.GetParam(req, "user_id"))
+	userID := types.ParseUUID(common.GetParam(req, userIDParam))
 	option := &model.ProjectQueryOption{
-		UserID: userID,
+		UserID: &userID,
 	}
 
 	if err := CheckUserPermission(res, req, userID); err == nil {
@@ -32,9 +32,10 @@ func ProjectList(res http.ResponseWriter, req *http.Request) {
 }
 
 type projectForm struct {
-	Title       *string `json:"title"`
-	Description *string `json:"description"`
-	IsPrivate   *bool   `json:"is_private"`
+	Title       *string       `json:"title"`
+	Description *string       `json:"description"`
+	IsPrivate   *bool         `json:"is_private"`
+	Elements    *[]types.UUID `json:"elements"`
 }
 
 func (form *projectForm) FieldMap() binding.FieldMap {
@@ -42,12 +43,29 @@ func (form *projectForm) FieldMap() binding.FieldMap {
 		&form.Title:       "title",
 		&form.Description: "description",
 		&form.IsPrivate:   "is_private",
+		&form.Elements:    "elements",
 	}
+}
+
+func saveProject(form *projectForm, project *model.Project) error {
+	if form.Title != nil {
+		project.Title = *form.Title
+	}
+
+	if form.Description != nil {
+		project.Description = *form.Description
+	}
+
+	if form.IsPrivate != nil {
+		project.IsPrivate = *form.IsPrivate
+	}
+
+	return project.Save()
 }
 
 // ProjectCreate handles POST /users/:user_id/projects.
 func ProjectCreate(res http.ResponseWriter, req *http.Request) {
-	userID := types.ParseUUID(common.GetParam(req, "user_id"))
+	userID := types.ParseUUID(common.GetParam(req, userIDParam))
 
 	if err := CheckUserPermission(res, req, userID); err != nil {
 		common.HandleAPIError(res, err)
@@ -60,31 +78,9 @@ func ProjectCreate(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if form.Title == nil {
-		common.HandleAPIError(res, &util.APIError{
-			Field:   "title",
-			Code:    util.RequiredError,
-			Message: "Title is required.",
-		})
-		return
-	}
+	project := &model.Project{UserID: userID}
 
-	if form.Description == nil {
-		*form.Description = ""
-	}
-
-	if form.IsPrivate == nil {
-		*form.IsPrivate = false
-	}
-
-	project := &model.Project{
-		Title:       *form.Title,
-		Description: *form.Description,
-		IsPrivate:   *form.IsPrivate,
-		UserID:      userID,
-	}
-
-	if err := project.Save(); err != nil {
+	if err := saveProject(form, project); err != nil {
 		common.HandleAPIError(res, err)
 		return
 	}
@@ -135,24 +131,12 @@ func ProjectUpdate(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err = CheckUserPermission(res, req, project.UserID); err != nil {
+	if err := CheckUserPermission(res, req, project.UserID); err != nil {
 		common.HandleAPIError(res, err)
 		return
 	}
 
-	if form.Title != nil {
-		project.Title = *form.Title
-	}
-
-	if form.Description != nil {
-		project.Description = *form.Description
-	}
-
-	if form.IsPrivate != nil {
-		project.IsPrivate = *form.IsPrivate
-	}
-
-	if err := project.Save(); err != nil {
+	if err := saveProject(form, project); err != nil {
 		common.HandleAPIError(res, err)
 		return
 	}

@@ -150,9 +150,8 @@ func TestUser(t *testing.T) {
 			newName := "new name"
 			now := time.Now().Truncate(time.Second)
 			user.Name = newName
-			err = user.Save()
 
-			if err != nil {
+			if err := user.Save(); err != nil {
 				log.Fatal(err)
 			}
 
@@ -312,8 +311,6 @@ func TestGetUser(t *testing.T) {
 		So(result.Password, ShouldResemble, user.Password)
 		So(result.CreatedAt.ISOTime(), ShouldResemble, user.CreatedAt.ISOTime())
 		So(result.UpdatedAt.ISOTime(), ShouldResemble, user.UpdatedAt.ISOTime())
-		// So(util.ISOTime(result.CreatedAt), ShouldResemble, util.ISOTime(user.CreatedAt))
-		// So(util.ISOTime(result.UpdatedAt), ShouldResemble, util.ISOTime(user.UpdatedAt))
 		So(user.IsActivated, ShouldEqual, user.IsActivated)
 		So(user.ActivationToken, ShouldResemble, user.ActivationToken)
 	})

@@ -82,7 +82,7 @@ func TestGetUser(t *testing.T) {
 
 	router := httprouter.New()
 
-	router.GET("/users/:user_id", common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	router.GET(userSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if user, err := GetUser(res, req); err != nil {
 			common.HandleAPIError(res, err)
 		} else {
@@ -156,7 +156,7 @@ func TestCheckUserPermission(t *testing.T) {
 		err := CheckUserPermission(res, req, types.NewRandomUUID())
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.UserForbiddenError,
-			Message: "You are forbidden to access this user.",
+			Message: "You are forbidden to access.",
 			Status:  http.StatusForbidden,
 		})
 	})
@@ -168,7 +168,7 @@ func TestCheckUserExist(t *testing.T) {
 	defer user.Delete()
 
 	router := httprouter.New()
-	router.GET("/users/:user_id", common.ChainHandler(CheckUserExist, func(res http.ResponseWriter, req *http.Request) {
+	router.GET(userSingularURL, common.ChainHandler(CheckUserExist, func(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNoContent)
 	}))
 
@@ -211,7 +211,7 @@ func TestGetProject(t *testing.T) {
 	defer project.Delete()
 
 	router := httprouter.New()
-	router.GET("/projects/:project_id", common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+	router.GET(projectSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if project, err := GetProject(res, req); err != nil {
 			common.HandleAPIError(res, err)
 		} else {
@@ -243,6 +243,173 @@ func TestGetProject(t *testing.T) {
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.ProjectNotFoundError,
 			Message: "Project not found.",
+		})
+	})
+}
+
+func TestCheckProjectExist(t *testing.T) {
+	user := new(model.User)
+	createTestUser(user, fixtureUsers[0])
+	defer user.Delete()
+
+	token := new(model.Token)
+	createTestToken(token, fixtureUsers[0])
+	defer token.Delete()
+
+	project := new(model.Project)
+	createTestProject(user, token, project, fixtureProjects[0])
+	defer project.Delete()
+
+	router := httprouter.New()
+	router.GET(projectSingularURL, common.ChainHandler(CheckProjectExist, func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusNoContent)
+	}))
+
+	Convey("Success", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/projects/"+project.ID.String(), nil)
+
+		router.ServeHTTP(res, req)
+
+		So(res.Code, ShouldEqual, http.StatusNoContent)
+	})
+
+	Convey("Failed", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/projects/"+uuid.New(), nil)
+
+		router.ServeHTTP(res, req)
+
+		err := new(util.APIError)
+		parseJSON(res.Body, err)
+		So(res.Code, ShouldEqual, http.StatusNotFound)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ProjectNotFoundError,
+			Message: "Project not found.",
+		})
+	})
+}
+
+func TestGetElement(t *testing.T) {
+	user := new(model.User)
+	createTestUser(user, fixtureUsers[0])
+	defer user.Delete()
+
+	token := new(model.Token)
+	createTestToken(token, fixtureUsers[0])
+	defer token.Delete()
+
+	project := new(model.Project)
+	createTestProject(user, token, project, fixtureProjects[0])
+	defer project.Delete()
+
+	element := new(model.Element)
+	createTestElement(project, token, element, fixtureElements[0])
+	defer element.Delete()
+
+	router := httprouter.New()
+	router.GET(elementSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		if element, err := GetElement(res, req); err != nil {
+			common.HandleAPIError(res, err)
+		} else {
+			common.RenderJSON(res, http.StatusOK, element)
+		}
+	}))
+
+	Convey("Success", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/elements/"+element.ID.String(), nil)
+
+		router.ServeHTTP(res, req)
+
+		e := new(model.Element)
+		So(res.Code, ShouldEqual, http.StatusOK)
+		parseJSON(res.Body, e)
+		So(e.ID, ShouldResemble, element.ID)
+	})
+
+	Convey("Failed", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/elements/"+uuid.New(), nil)
+
+		router.ServeHTTP(res, req)
+
+		err := new(util.APIError)
+		So(res.Code, ShouldEqual, http.StatusNotFound)
+		parseJSON(res.Body, err)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ElementNotFoundError,
+			Message: "Element not found.",
+		})
+	})
+}
+
+func TestCheckProjectPermission(t *testing.T) {
+	u1 := new(model.User)
+	createTestUser(u1, fixtureUsers[0])
+	defer u1.Delete()
+
+	u2 := new(model.User)
+	createTestUser(u2, fixtureUsers[1])
+	defer u2.Delete()
+
+	t1 := new(model.Token)
+	createTestToken(t1, fixtureUsers[0])
+	defer t1.Delete()
+
+	t2 := new(model.Token)
+	createTestToken(t2, fixtureUsers[1])
+	defer t2.Delete()
+
+	p1 := new(model.Project)
+	createTestProject(u1, t1, p1, fixtureProjects[0])
+	defer p1.Delete()
+
+	p2 := new(model.Project)
+	createTestProject(u2, t2, p2, fixtureProjects[1])
+	defer p2.Delete()
+
+	Convey("Owner", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", "Bearer "+t1.ID.String())
+
+		err := CheckProjectPermission(res, req, p1.ID, false)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Others + Public", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", "Bearer "+t2.ID.String())
+
+		err := CheckProjectPermission(res, req, p1.ID, false)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Others + Public + Strict", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", "Bearer "+t2.ID.String())
+
+		err := CheckProjectPermission(res, req, p1.ID, true)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.UserForbiddenError,
+			Message: "You are forbidden to access.",
+			Status:  http.StatusForbidden,
+		})
+	})
+
+	Convey("Others + Private", t, func() {
+		res := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set("Authorization", "Bearer "+t1.ID.String())
+
+		err := CheckProjectPermission(res, req, p2.ID, false)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.UserForbiddenError,
+			Message: "You are forbidden to access.",
+			Status:  http.StatusForbidden,
 		})
 	})
 }

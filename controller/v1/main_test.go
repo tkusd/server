@@ -3,6 +3,8 @@ package v1
 import (
 	"io"
 
+	"github.com/tommy351/app-studio-server/model/types"
+
 	"bytes"
 	"encoding/json"
 	"log"
@@ -37,6 +39,20 @@ var fixtureProjects = []struct {
 	{Title: "World", IsPrivate: true},
 }
 
+var fixtureElements = []struct {
+	Name       string            `json:"name"`
+	Type       types.ElementType `json:"type"`
+	Attributes types.JSONObject  `json:"attributes"`
+}{
+	{
+		Name: "Text",
+		Type: types.ElementTypeScreen,
+		Attributes: map[string]interface{}{
+			"foo": "bar",
+		},
+	},
+}
+
 func init() {
 	router = Router()
 }
@@ -46,7 +62,7 @@ func request(options *requestOptions) *httptest.ResponseRecorder {
 
 	if options.Body != nil {
 		if b, err := json.Marshal(options.Body); err != nil {
-			panic(err)
+			log.Fatal(err)
 		} else {
 			body = bytes.NewReader(b)
 		}

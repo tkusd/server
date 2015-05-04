@@ -20,7 +20,7 @@ type Project struct {
 // ProjectQueryOption is the query options for projects.
 type ProjectQueryOption struct {
 	QueryOption
-	UserID  types.UUID
+	UserID  *types.UUID
 	Private bool
 }
 
@@ -69,9 +69,28 @@ func (p *Project) Exists() bool {
 	return exists("projects", p.ID.String())
 }
 
-// GetProjectList gets a list of projects matching the query options.
+/*
+func (p *Project) Elements() ([]*Element, error) {
+
+	var list []*Element
+	var result []*Element
+
+	if err := db.Where("project_id = ?", p.ID.String()).Find(&list).Error; err != nil {
+		return nil, err
+	}
+
+	for i, item := range list {
+		//
+	}
+
+	return result, nil
+
+	db.Raw(``, p.ID.String())
+}*/
+
+// GetProjectList gets a list of projects.
 func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
-	list := new([]*Project)
+	var list []*Project
 
 	query := map[string]interface{}{}
 
@@ -79,7 +98,7 @@ func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
 		query["is_private"] = false
 	}
 
-	if !option.UserID.IsEmpty() {
+	if option.UserID != nil {
 		query["user_id"] = option.UserID.String()
 	}
 
@@ -91,11 +110,11 @@ func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
 		option.Order = "created_at desc"
 	}
 
-	if err := db.Where(query).Order(option.Order).Offset(option.Offset).Limit(option.Limit).Find(list).Error; err != nil {
+	if err := db.Where(query).Order(option.Order).Offset(option.Offset).Limit(option.Limit).Find(&list).Error; err != nil {
 		return nil, err
 	}
 
-	return *list, nil
+	return list, nil
 }
 
 // GetProject gets the project data.

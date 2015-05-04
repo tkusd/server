@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql/driver"
 	"encoding/hex"
+	"encoding/json"
 	"hash"
 )
 
@@ -37,18 +38,38 @@ func (h Hash) String() string {
 	return hex.EncodeToString(h)
 }
 
+// MarshalJSON implements json.Marshaler interface.
 func (h Hash) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + h.String() + `"`), nil
 }
 
+// MarshalText implements encoding.TextMarshaler interface.
 func (h Hash) MarshalText() ([]byte, error) {
 	return []byte(h.String()), nil
 }
 
-// UnmarshalJSON implements the json.Marshaler interface.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (h *Hash) UnmarshalJSON(data []byte) error {
-	h.Scan(data)
+	var str string
+
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	result, err := hex.DecodeString(str)
+
+	if err != nil {
+		return err
+	}
+
+	*h = result
+
 	return nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler interface.
+func (h *Hash) UnmarshalText(data []byte) error {
+	return h.UnmarshalJSON(data)
 }
 
 // NewHash creates a new hash instance.

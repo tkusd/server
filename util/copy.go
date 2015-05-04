@@ -5,7 +5,7 @@ import (
 	"unsafe"
 )
 
-// FastCopyString copies strings with pointers which are much faster.
+// FastCopyString copies strings with pointers which is much faster.
 func FastCopyString(s string) string {
 	var b []byte
 	h := (*reflect.SliceHeader)(unsafe.Pointer(&b))

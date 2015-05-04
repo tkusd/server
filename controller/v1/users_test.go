@@ -341,7 +341,7 @@ func TestUserUpdate(t *testing.T) {
 		parseJSON(r.Body, err)
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.UserForbiddenError,
-			Message: "You are forbidden to access this user.",
+			Message: "You are forbidden to access.",
 		})
 	})
 
@@ -414,7 +414,7 @@ func TestUserDestroy(t *testing.T) {
 		parseJSON(r.Body, err)
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.UserForbiddenError,
-			Message: "You are forbidden to access this user.",
+			Message: "You are forbidden to access.",
 		})
 	})
 

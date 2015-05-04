@@ -12,10 +12,12 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 	if err := binding.Bind(req, mapper); err != nil {
 		e := err[0]
 		code := util.UnknownError
+		status := http.StatusBadRequest
 
 		switch e.Classification {
 		case binding.ContentTypeError:
 			code = util.ContentTypeError
+			status = http.StatusUnsupportedMediaType
 			break
 
 		case binding.DeserializationError:
@@ -34,6 +36,7 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 		HandleAPIError(res, &util.APIError{
 			Code:    code,
 			Message: e.Message,
+			Status:  status,
 		})
 
 		return true

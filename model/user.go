@@ -13,15 +13,15 @@ import (
 
 // User represents the data structure of a user.
 type User struct {
-	ID              types.UUID `json:"id"`
-	Name            string     `json:"name"`
-	Password        []byte     `json:"-"`
-	Email           string     `json:"email"`
-	Avatar          string     `json:"avatar"`
-	CreatedAt       types.Time `json:"created_at"`
-	UpdatedAt       types.Time `json:"updated_at"`
-	IsActivated     bool       `json:"is_activated"`
-	ActivationToken types.Hash `json:"-"`
+	ID              types.UUID       `json:"id"`
+	Name            string           `json:"name"`
+	Password        []byte           `json:"-"`
+	Email           string           `json:"email"`
+	Avatar          string           `json:"avatar"`
+	CreatedAt       types.Time       `json:"created_at"`
+	UpdatedAt       types.Time       `json:"updated_at"`
+	IsActivated     bool             `json:"is_activated"`
+	ActivationToken types.Base64Hash `json:"-"`
 }
 
 // PublicProfile returns the data for public display.
@@ -124,7 +124,7 @@ func (u *User) SetActivated(activated bool) {
 		u.IsActivated = true
 	} else {
 		u.IsActivated = false
-		u.ActivationToken = types.SHA256(u.Email, time.Now().String(), uuid.New())
+		u.ActivationToken = types.Base64Hash{types.SHA256(u.Email, time.Now().String(), uuid.New())}
 	}
 }
 

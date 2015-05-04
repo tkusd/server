@@ -11,13 +11,14 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/tommy351/app-studio-server/model"
+	"github.com/tommy351/app-studio-server/model/types"
 	"github.com/tommy351/app-studio-server/util"
 )
 
-func createTestProject(user *model.User, token *model.Token, data interface{}, body interface{}) *httptest.ResponseRecorder {
+func createTestElement(project *model.Project, token *model.Token, data interface{}, body interface{}) *httptest.ResponseRecorder {
 	r := request(&requestOptions{
 		Method: "POST",
-		URL:    "/users/" + user.ID.String() + "/projects",
+		URL:    "/projects/" + project.ID.String() + "/elements",
 		Body:   body,
 		Headers: map[string]string{
 			"Authorization": "Bearer " + token.ID.String(),
@@ -31,7 +32,11 @@ func createTestProject(user *model.User, token *model.Token, data interface{}, b
 	return r
 }
 
-func TestProjectList(t *testing.T) {
+func TestElementList(t *testing.T) {
+	//
+}
+
+func TestElementCreate(t *testing.T) {
 	u1 := new(model.User)
 	createTestUser(u1, fixtureUsers[0])
 	defer u1.Delete()
@@ -52,131 +57,30 @@ func TestProjectList(t *testing.T) {
 	createTestProject(u1, t1, p1, fixtureProjects[0])
 	defer p1.Delete()
 
-	p2 := new(model.Project)
-	createTestProject(u2, t2, p2, fixtureProjects[1])
-	defer p2.Delete()
-
 	Convey("Success", t, func() {
-		var list []*model.Project
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/users/" + u1.ID.String() + "/projects",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t1.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, &list)
-		So(len(list), ShouldEqual, 1)
-		So(list[0].ID, ShouldResemble, p1.ID)
-	})
-
-	Convey("Show owner's all projects", t, func() {
-		var list []*model.Project
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/users/" + u2.ID.String() + "/projects",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t2.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, &list)
-		So(len(list), ShouldEqual, 1)
-		So(list[0].ID, ShouldResemble, p2.ID)
-	})
-
-	Convey("Hide private projects to others", t, func() {
-		var list []*model.Project
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/users/" + u2.ID.String() + "/projects",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t1.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, &list)
-		So(len(list), ShouldEqual, 0)
-	})
-
-	Convey("User not found", t, func() {
-		err := new(util.APIError)
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/users/" + uuid.New() + "/projects",
-		})
-
-		So(r.Code, ShouldEqual, http.StatusNotFound)
-		parseJSON(r.Body, err)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.UserNotFoundError,
-			Message: "User not found.",
-		})
-	})
-}
-
-func TestProjectCreate(t *testing.T) {
-	u1 := new(model.User)
-	createTestUser(u1, fixtureUsers[0])
-	defer u1.Delete()
-
-	u2 := new(model.User)
-	createTestUser(u2, fixtureUsers[1])
-	defer u2.Delete()
-
-	t1 := new(model.Token)
-	createTestToken(t1, fixtureUsers[0])
-	defer t1.Delete()
-
-	t2 := new(model.Token)
-	createTestToken(t2, fixtureUsers[1])
-	defer t2.Delete()
-
-	Convey("Success", t, func() {
-		project := new(model.Project)
+		element := new(model.Element)
 		now := time.Now().Truncate(time.Second)
-		r := createTestProject(u1, t1, project, fixtureProjects[0])
-		defer project.Delete()
+		r := createTestElement(p1, t1, element, fixtureElements[0])
+		defer element.Delete()
 
 		So(r.Code, ShouldEqual, http.StatusCreated)
-		So(project.Title, ShouldEqual, fixtureProjects[0].Title)
-		So(project.Description, ShouldEqual, fixtureProjects[0].Description)
-		So(project.IsPrivate, ShouldEqual, fixtureProjects[0].IsPrivate)
-		So(project.CreatedAt.Time, ShouldHappenOnOrAfter, now)
-		So(project.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
-		So(project.UserID, ShouldResemble, u1.ID)
-	})
-
-	Convey("User not found", t, func() {
-		err := new(util.APIError)
-		r := request(&requestOptions{
-			Method: "POST",
-			URL:    "/users/" + uuid.New() + "/projects",
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t1.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusNotFound)
-		parseJSON(r.Body, err)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.UserNotFoundError,
-			Message: "User not found.",
-		})
+		So(element.Name, ShouldEqual, fixtureElements[0].Name)
+		So(element.Type, ShouldEqual, fixtureElements[0].Type)
+		So(element.CreatedAt.Time, ShouldHappenOnOrAfter, now)
+		So(element.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
+		So(element.ProjectID, ShouldResemble, p1.ID)
+		So(element.Attributes, ShouldResemble, fixtureElements[0].Attributes)
 	})
 
 	Convey("Forbidden", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
 			Method: "POST",
-			URL:    "/users/" + u1.ID.String() + "/projects",
+			URL:    "/projects/" + p1.ID.String() + "/elements",
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t2.ID.String(),
 			},
+			Body: map[string]interface{}{},
 		})
 
 		So(r.Code, ShouldEqual, http.StatusForbidden)
@@ -186,92 +90,12 @@ func TestProjectCreate(t *testing.T) {
 			Message: "You are forbidden to access.",
 		})
 	})
-}
-
-func TestProjectShow(t *testing.T) {
-	u1 := new(model.User)
-	createTestUser(u1, fixtureUsers[0])
-	defer u1.Delete()
-
-	u2 := new(model.User)
-	createTestUser(u2, fixtureUsers[1])
-	defer u2.Delete()
-
-	t1 := new(model.Token)
-	createTestToken(t1, fixtureUsers[0])
-	defer t1.Delete()
-
-	t2 := new(model.Token)
-	createTestToken(t2, fixtureUsers[1])
-	defer t2.Delete()
-
-	p1 := new(model.Project)
-	createTestProject(u1, t1, p1, fixtureProjects[0])
-	defer p1.Delete()
-
-	p2 := new(model.Project)
-	createTestProject(u2, t2, p2, fixtureProjects[1])
-	defer p2.Delete()
-
-	Convey("Success", t, func() {
-		project := new(model.Project)
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/projects/" + p1.ID.String(),
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t1.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, project)
-		So(project.ID, ShouldResemble, p1.ID)
-		So(project.Title, ShouldEqual, p1.Title)
-		So(project.Description, ShouldEqual, p1.Description)
-		So(project.UserID, ShouldResemble, p1.UserID)
-		So(project.CreatedAt.Time, ShouldResemble, p1.CreatedAt.Truncate(time.Second))
-		So(project.UpdatedAt.Time, ShouldResemble, p1.UpdatedAt.Truncate(time.Second))
-		So(project.IsPrivate, ShouldEqual, p1.IsPrivate)
-	})
-
-	Convey("Public project", t, func() {
-		project := new(model.Project)
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/projects/" + p1.ID.String(),
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t2.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, project)
-		So(project.ID, ShouldResemble, p1.ID)
-	})
-
-	Convey("Forbidden", t, func() {
-		err := new(util.APIError)
-		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/projects/" + p2.ID.String(),
-			Headers: map[string]string{
-				"Authorization": "Bearer " + t1.ID.String(),
-			},
-		})
-
-		So(r.Code, ShouldEqual, http.StatusForbidden)
-		parseJSON(r.Body, err)
-		So(err, ShouldResemble, &util.APIError{
-			Code:    util.UserForbiddenError,
-			Message: "You are forbidden to access this project.",
-		})
-	})
 
 	Convey("Project not found", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
-			Method: "GET",
-			URL:    "/projects/" + uuid.New(),
+			Method: "POST",
+			URL:    "/projects/" + uuid.New() + "/elements",
 		})
 
 		So(r.Code, ShouldEqual, http.StatusNotFound)
@@ -283,7 +107,7 @@ func TestProjectShow(t *testing.T) {
 	})
 }
 
-func TestProjectUpdate(t *testing.T) {
+func TestElementShow(t *testing.T) {
 	u1 := new(model.User)
 	createTestUser(u1, fixtureUsers[0])
 	defer u1.Delete()
@@ -304,39 +128,150 @@ func TestProjectUpdate(t *testing.T) {
 	createTestProject(u1, t1, p1, fixtureProjects[0])
 	defer p1.Delete()
 
+	p2 := new(model.Project)
+	createTestProject(u2, t2, p2, fixtureProjects[1])
+	defer p2.Delete()
+
+	e1 := new(model.Element)
+	createTestElement(p1, t1, e1, fixtureElements[0])
+	defer e1.Delete()
+
+	e2 := new(model.Element)
+	createTestElement(p2, t2, e2, fixtureElements[0])
+	defer e2.Delete()
+
 	Convey("Success", t, func() {
-		project := new(model.Project)
+		element := new(model.Element)
+		r := request(&requestOptions{
+			Method: "GET",
+			URL:    "/elements/" + e1.ID.String(),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + t1.ID.String(),
+			},
+		})
+
+		So(r.Code, ShouldEqual, http.StatusOK)
+		parseJSON(r.Body, element)
+		So(element.ID, ShouldResemble, e1.ID)
+		So(element.Name, ShouldEqual, e1.Name)
+		So(element.ProjectID, ShouldResemble, e1.ProjectID)
+		So(element.Type, ShouldEqual, e1.Type)
+		So(element.CreatedAt.Time, ShouldResemble, e1.CreatedAt.Truncate(time.Second))
+		So(element.UpdatedAt.Time, ShouldResemble, e1.UpdatedAt.Truncate(time.Second))
+		So(element.Attributes, ShouldResemble, e1.Attributes)
+	})
+
+	Convey("Public", t, func() {
+		element := new(model.Element)
+		r := request(&requestOptions{
+			Method: "GET",
+			URL:    "/elements/" + e1.ID.String(),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + t2.ID.String(),
+			},
+		})
+
+		So(r.Code, ShouldEqual, http.StatusOK)
+		parseJSON(r.Body, element)
+		So(element.ID, ShouldResemble, e1.ID)
+	})
+
+	Convey("Private", t, func() {
+		err := new(util.APIError)
+		r := request(&requestOptions{
+			Method: "GET",
+			URL:    "/elements/" + e2.ID.String(),
+			Headers: map[string]string{
+				"Authorization": "Bearer " + t1.ID.String(),
+			},
+		})
+
+		So(r.Code, ShouldEqual, http.StatusForbidden)
+		parseJSON(r.Body, err)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.UserForbiddenError,
+			Message: "You are forbidden to access.",
+		})
+	})
+
+	Convey("Element not found", t, func() {
+		err := new(util.APIError)
+		r := request(&requestOptions{
+			Method: "GET",
+			URL:    "/elements/" + uuid.New(),
+		})
+
+		So(r.Code, ShouldEqual, http.StatusNotFound)
+		parseJSON(r.Body, err)
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ElementNotFoundError,
+			Message: "Element not found.",
+		})
+	})
+}
+
+func TestElementUpdate(t *testing.T) {
+	u1 := new(model.User)
+	createTestUser(u1, fixtureUsers[0])
+	defer u1.Delete()
+
+	u2 := new(model.User)
+	createTestUser(u2, fixtureUsers[1])
+	defer u2.Delete()
+
+	t1 := new(model.Token)
+	createTestToken(t1, fixtureUsers[0])
+	defer t1.Delete()
+
+	t2 := new(model.Token)
+	createTestToken(t2, fixtureUsers[1])
+	defer t2.Delete()
+
+	p1 := new(model.Project)
+	createTestProject(u1, t1, p1, fixtureProjects[0])
+	defer p1.Delete()
+
+	e1 := new(model.Element)
+	createTestElement(p1, t1, e1, fixtureElements[0])
+	defer e1.Delete()
+
+	Convey("Success", t, func() {
+		element := new(model.Element)
 		now := time.Now().Truncate(time.Second)
-		newTitle := "New title"
-		newDesc := "New description"
+		newName := "New name"
+		newType := types.ElementTypeText
+		newAttrs := types.JSONObject(map[string]interface{}{
+			"bar": "123",
+		})
+
 		r := request(&requestOptions{
 			Method: "PUT",
-			URL:    "/projects/" + p1.ID.String(),
+			URL:    "/elements/" + e1.ID.String(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t1.ID.String(),
 			},
 			Body: map[string]interface{}{
-				"title":       newTitle,
-				"description": newDesc,
-				"is_private":  true,
+				"name":       newName,
+				"type":       newType,
+				"attributes": newAttrs,
 			},
 		})
 
 		So(r.Code, ShouldEqual, http.StatusOK)
-		parseJSON(r.Body, project)
-		So(project.ID, ShouldResemble, p1.ID)
-		So(project.Title, ShouldEqual, newTitle)
-		So(project.Description, ShouldEqual, newDesc)
-		So(project.IsPrivate, ShouldBeTrue)
-		So(project.CreatedAt.Time, ShouldResemble, p1.CreatedAt.Truncate(time.Second))
-		So(project.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
+		parseJSON(r.Body, element)
+		So(element.ID, ShouldResemble, e1.ID)
+		So(element.Name, ShouldEqual, newName)
+		So(element.Type, ShouldEqual, newType)
+		So(element.Attributes, ShouldResemble, newAttrs)
+		So(element.CreatedAt.Time, ShouldResemble, e1.CreatedAt.Truncate(time.Second))
+		So(element.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
 	})
 
 	Convey("Forbidden", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
 			Method: "PUT",
-			URL:    "/projects/" + p1.ID.String(),
+			URL:    "/elements/" + e1.ID.String(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t2.ID.String(),
 			},
@@ -351,11 +286,11 @@ func TestProjectUpdate(t *testing.T) {
 		})
 	})
 
-	Convey("Project not found", t, func() {
+	Convey("Element not found", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
 			Method: "PUT",
-			URL:    "/projects/" + uuid.New(),
+			URL:    "/elements/" + uuid.New(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t1.ID.String(),
 			},
@@ -365,13 +300,13 @@ func TestProjectUpdate(t *testing.T) {
 		So(r.Code, ShouldEqual, http.StatusNotFound)
 		parseJSON(r.Body, err)
 		So(err, ShouldResemble, &util.APIError{
-			Code:    util.ProjectNotFoundError,
-			Message: "Project not found.",
+			Code:    util.ElementNotFoundError,
+			Message: "Element not found.",
 		})
 	})
 }
 
-func TestProjectDestroy(t *testing.T) {
+func TestElementDestroy(t *testing.T) {
 	u1 := new(model.User)
 	createTestUser(u1, fixtureUsers[0])
 	defer u1.Delete()
@@ -392,10 +327,14 @@ func TestProjectDestroy(t *testing.T) {
 	createTestProject(u1, t1, p1, fixtureProjects[0])
 	defer p1.Delete()
 
+	e1 := new(model.Element)
+	createTestElement(p1, t1, e1, fixtureElements[0])
+	defer e1.Delete()
+
 	Convey("Success", t, func() {
 		r := request(&requestOptions{
 			Method: "DELETE",
-			URL:    "/projects/" + p1.ID.String(),
+			URL:    "/elements/" + e1.ID.String(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t1.ID.String(),
 			},
@@ -403,17 +342,17 @@ func TestProjectDestroy(t *testing.T) {
 
 		So(r.Code, ShouldEqual, http.StatusNoContent)
 
-		_, err := model.GetProject(p1.ID)
+		_, err := model.GetElement(e1.ID)
 		So(err, ShouldNotBeNil)
 
-		createTestProject(u1, t1, p1, fixtureProjects[0])
+		createTestElement(p1, t1, e1, fixtureElements[0])
 	})
 
 	Convey("Forbidden", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
 			Method: "DELETE",
-			URL:    "/projects/" + p1.ID.String(),
+			URL:    "/elements/" + e1.ID.String(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t2.ID.String(),
 			},
@@ -427,11 +366,11 @@ func TestProjectDestroy(t *testing.T) {
 		})
 	})
 
-	Convey("Project not found", t, func() {
+	Convey("Element not found", t, func() {
 		err := new(util.APIError)
 		r := request(&requestOptions{
 			Method: "DELETE",
-			URL:    "/projects/" + uuid.New(),
+			URL:    "/elements/" + uuid.New(),
 			Headers: map[string]string{
 				"Authorization": "Bearer " + t1.ID.String(),
 			},
@@ -440,8 +379,8 @@ func TestProjectDestroy(t *testing.T) {
 		So(r.Code, ShouldEqual, http.StatusNotFound)
 		parseJSON(r.Body, err)
 		So(err, ShouldResemble, &util.APIError{
-			Code:    util.ProjectNotFoundError,
-			Message: "Project not found.",
+			Code:    util.ElementNotFoundError,
+			Message: "Element not found.",
 		})
 	})
 }

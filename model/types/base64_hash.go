@@ -37,15 +37,17 @@ func (h Base64Hash) IsEmpty() bool {
 	return len(h.Hash) == 0
 }
 
+// MarshalJSON implements json.Marshaler interface.
 func (h Base64Hash) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + h.String() + `"`), nil
 }
 
+// MarshalText implements encoding.TextMarshaler interface.
 func (h Base64Hash) MarshalText() ([]byte, error) {
 	return []byte(h.String()), nil
 }
 
-// UnmarshalJSON implements the json.Marshaler interface.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (h *Base64Hash) UnmarshalJSON(data []byte) error {
 	var str string
 
@@ -62,6 +64,11 @@ func (h *Base64Hash) UnmarshalJSON(data []byte) error {
 	*h = *result
 
 	return nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler interface.
+func (h *Base64Hash) UnmarshalText(data []byte) error {
+	return h.UnmarshalJSON(data)
 }
 
 // DecodeBase64 decodes the input string and returns a hash.

@@ -1,6 +1,6 @@
 package util
 
-// 1000: Unknown error
+// 1000: Generic error
 const (
 	UnknownError  = 1000
 	ServerError   = 1001
@@ -9,13 +9,14 @@ const (
 
 // 1100: Validation error
 const (
-	RequiredError        = 1100
-	ContentTypeError     = 1101
-	DeserializationError = 1102
-	TypeError            = 1103
-	EmailError           = 1104
-	LengthError          = 1105
-	URLError             = 1106
+	RequiredError               = 1100
+	ContentTypeError            = 1101
+	DeserializationError        = 1102
+	TypeError                   = 1103
+	EmailError                  = 1104
+	LengthError                 = 1105
+	URLError                    = 1106
+	UnsupportedElementTypeError = 1107
 )
 
 // 1200: Resource error
@@ -23,6 +24,7 @@ const (
 	UserNotFoundError    = 1200
 	TokenNotFoundError   = 1201
 	ProjectNotFoundError = 1202
+	ElementNotFoundError = 1203
 )
 
 // 1300: Data error

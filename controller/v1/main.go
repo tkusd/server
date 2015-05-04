@@ -8,24 +8,50 @@ import (
 	"github.com/tommy351/app-studio-server/controller/common"
 )
 
+// Params
+const (
+	userIDParam    = "user_id"
+	projectIDParam = "project_id"
+	elementIDParam = "element_id"
+	keyParam       = "key"
+)
+
+// URL patterns
+const (
+	userCollectionURL    = "/users"
+	userSingularURL      = "/users/:" + userIDParam
+	projectCollectionURL = userSingularURL + "/projects"
+	projectSingularURL   = "/projects/:" + projectIDParam
+	elementCollectionURL = projectSingularURL + "/elements"
+	elementSingularURL   = "/elements/:" + elementIDParam
+	tokenCollectionURL   = "/tokens"
+	tokenSingularURL     = "/tokens/:" + keyParam
+)
+
 // Router returns a http.Handler.
 func Router() http.Handler {
 	n := negroni.New()
 	r := httprouter.New()
 
-	r.POST("/users", common.WrapHandlerFunc(UserCreate))
-	r.GET("/users/:user_id", common.WrapHandlerFunc(UserShow))
-	r.PUT("/users/:user_id", common.WrapHandlerFunc(UserUpdate))
-	r.DELETE("/users/:user_id", common.WrapHandlerFunc(UserDestroy))
+	r.POST(userCollectionURL, common.WrapHandlerFunc(UserCreate))
+	r.GET(userSingularURL, common.WrapHandlerFunc(UserShow))
+	r.PUT(userSingularURL, common.WrapHandlerFunc(UserUpdate))
+	r.DELETE(userSingularURL, common.WrapHandlerFunc(UserDestroy))
 
-	r.GET("/users/:user_id/projects", common.ChainHandler(CheckUserExist, ProjectList))
-	r.POST("/users/:user_id/projects", common.ChainHandler(CheckUserExist, ProjectCreate))
-	r.GET("/projects/:project_id", common.WrapHandlerFunc(ProjectShow))
-	r.PUT("/projects/:project_id", common.WrapHandlerFunc(ProjectUpdate))
-	r.DELETE("/projects/:project_id", common.WrapHandlerFunc(ProjectDestroy))
+	r.GET(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectList))
+	r.POST(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectCreate))
+	r.GET(projectSingularURL, common.WrapHandlerFunc(ProjectShow))
+	r.PUT(projectSingularURL, common.WrapHandlerFunc(ProjectUpdate))
+	r.DELETE(projectSingularURL, common.WrapHandlerFunc(ProjectDestroy))
 
-	r.POST("/tokens", common.WrapHandlerFunc(TokenCreate))
-	r.DELETE("/tokens/:key", common.WrapHandlerFunc(TokenDestroy))
+	r.GET(elementCollectionURL, common.ChainHandler(CheckProjectExist, ElementList))
+	r.POST(elementCollectionURL, common.WrapHandlerFunc(ElementCreate))
+	r.GET(elementSingularURL, common.WrapHandlerFunc(ElementShow))
+	r.PUT(elementSingularURL, common.WrapHandlerFunc(ElementUpdate))
+	r.DELETE(elementSingularURL, common.WrapHandlerFunc(ElementDestroy))
+
+	r.POST(tokenCollectionURL, common.WrapHandlerFunc(TokenCreate))
+	r.DELETE(tokenSingularURL, common.WrapHandlerFunc(TokenDestroy))
 
 	r.NotFound = common.NotFound
 

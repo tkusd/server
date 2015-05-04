@@ -41,7 +41,7 @@ func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) 
 
 // GetUser parses user_id in the URL and gets the user data from the database.
 func GetUser(res http.ResponseWriter, req *http.Request) (*model.User, error) {
-	if id := common.GetParam(req, "user_id"); id != "" {
+	if id := common.GetParam(req, userIDParam); id != "" {
 		if user, err := model.GetUser(types.ParseUUID(id)); err == nil {
 			return user, nil
 		}
@@ -68,14 +68,14 @@ func CheckUserPermission(res http.ResponseWriter, req *http.Request, userID type
 
 	return &util.APIError{
 		Code:    util.UserForbiddenError,
-		Message: "You are forbidden to access this user.",
+		Message: "You are forbidden to access.",
 		Status:  http.StatusForbidden,
 	}
 }
 
-// CheckUserExist checks whether user exists or not.
+// CheckUserExist checks whether the user exists or not.
 func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	if id := common.GetParam(req, "user_id"); id != "" {
+	if id := common.GetParam(req, userIDParam); id != "" {
 		user := &model.User{ID: types.ParseUUID(id)}
 
 		if user.Exists() {
@@ -93,7 +93,7 @@ func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.Handle
 
 // GetProject parses project_id in the URL and gets the project data from the database.
 func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, error) {
-	if id := common.GetParam(req, "project_id"); id != "" {
+	if id := common.GetParam(req, projectIDParam); id != "" {
 		if project, err := model.GetProject(types.ParseUUID(id)); err == nil {
 			return project, nil
 		}
@@ -103,5 +103,61 @@ func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, err
 		Code:    util.ProjectNotFoundError,
 		Message: "Project not found.",
 		Status:  http.StatusNotFound,
+	}
+}
+
+// CheckProjectExist checks whether the project exists or not.
+func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	if id := common.GetParam(req, projectIDParam); id != "" {
+		project := &model.Project{ID: types.ParseUUID(id)}
+
+		if project.Exists() {
+			next(res, req)
+			return
+		}
+	}
+
+	common.HandleAPIError(res, &util.APIError{
+		Code:    util.ProjectNotFoundError,
+		Message: "Project not found.",
+		Status:  http.StatusNotFound,
+	})
+}
+
+// GetElement parses element_id in the URL and gets the element data from the database.
+func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, error) {
+	if id := common.GetParam(req, elementIDParam); id != "" {
+		if element, err := model.GetElement(types.ParseUUID(id)); err == nil {
+			return element, nil
+		}
+	}
+
+	return nil, &util.APIError{
+		Code:    util.ElementNotFoundError,
+		Message: "Element not found.",
+		Status:  http.StatusNotFound,
+	}
+}
+
+// CheckProjectPermission checks whether the current user is able to edit the project.
+func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectID types.UUID, strict bool) error {
+	token, err := GetToken(res, req)
+
+	if err != nil {
+		return err
+	}
+
+	project, err := model.GetProject(projectID)
+
+	if err == nil {
+		if project.UserID.Equal(token.UserID) || (!strict && !project.IsPrivate) {
+			return nil
+		}
+	}
+
+	return &util.APIError{
+		Code:    util.UserForbiddenError,
+		Message: "You are forbidden to access.",
+		Status:  http.StatusForbidden,
 	}
 }

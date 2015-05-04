@@ -22,6 +22,10 @@ func (uid *UUID) Scan(val interface{}) error {
 
 // Value implements the driver.Valuer interface.
 func (uid UUID) Value() (driver.Value, error) {
+	if uid.IsEmpty() {
+		return nil, nil
+	}
+
 	return uid.UUID.String(), nil
 }
 
