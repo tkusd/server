@@ -37,6 +37,7 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 			Code:    code,
 			Message: e.Message,
 			Status:  status,
+			Field:   e.Fields()[0],
 		})
 
 		return true
