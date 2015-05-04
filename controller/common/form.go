@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/mholt/binding"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/util"
 )
 
 // BindForm binds data to the struct.

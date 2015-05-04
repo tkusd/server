@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	"github.com/codegangsta/negroni"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/util"
 )
 
 const (

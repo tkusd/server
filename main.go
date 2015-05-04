@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/tommy351/app-studio-server/controller"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/controller"
+	"github.com/tkusd/server/util"
 )
 
 func main() {

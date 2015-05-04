@@ -3,7 +3,7 @@ package common
 import (
 	"net/http"
 
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/util"
 )
 
 func HandleAPIError(res http.ResponseWriter, err error) {

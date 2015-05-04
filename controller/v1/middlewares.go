@@ -5,10 +5,10 @@ import (
 
 	"regexp"
 
-	"github.com/tommy351/app-studio-server/controller/common"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/controller/common"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 )
 
 var rToken = regexp.MustCompile(`Bearer ([A-Za-z0-9\-\._~\+\/]+=*)`)

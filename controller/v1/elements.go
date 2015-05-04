@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/mholt/binding"
-	"github.com/tommy351/app-studio-server/controller/common"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/model/types"
+	"github.com/tkusd/server/controller/common"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/model/types"
 )
 
 // ElementList handles GET /projects/:project_id/elements.

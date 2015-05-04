@@ -5,7 +5,7 @@ import (
 
 	"github.com/codegangsta/negroni"
 	"github.com/julienschmidt/httprouter"
-	"github.com/tommy351/app-studio-server/controller/common"
+	"github.com/tkusd/server/controller/common"
 )
 
 // Params

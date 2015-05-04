@@ -3,7 +3,7 @@ package v1
 import (
 	"io"
 
-	"github.com/tommy351/app-studio-server/model/types"
+	"github.com/tkusd/server/model/types"
 
 	"bytes"
 	"encoding/json"

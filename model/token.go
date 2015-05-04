@@ -2,7 +2,7 @@ package model
 
 import (
 	"code.google.com/p/go-uuid/uuid"
-	"github.com/tommy351/app-studio-server/model/types"
+	"github.com/tkusd/server/model/types"
 )
 
 // Token represents the data structure of a token.

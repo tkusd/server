@@ -6,8 +6,8 @@ import (
 	"github.com/codegangsta/negroni"
 	"github.com/julienschmidt/httprouter"
 	"github.com/phyber/negroni-gzip/gzip"
-	"github.com/tommy351/app-studio-server/controller/common"
-	"github.com/tommy351/app-studio-server/controller/v1"
+	"github.com/tkusd/server/controller/common"
+	"github.com/tkusd/server/controller/v1"
 )
 
 // Router returns a http.Handler.

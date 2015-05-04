@@ -10,10 +10,10 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/tommy351/app-studio-server/controller/common"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/controller/common"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 )
 
 func TestGetToken(t *testing.T) {

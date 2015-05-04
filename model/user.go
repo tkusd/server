@@ -5,8 +5,8 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/lib/pq"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 
 	"code.google.com/p/go-uuid/uuid"
 )

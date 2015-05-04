@@ -1,6 +1,6 @@
 package util
 
-import "github.com/tommy351/app-studio-server/model/types"
+import "github.com/tkusd/server/model/types"
 
 // Gravatar generates gravatar URL with email.
 func Gravatar(email string) string {

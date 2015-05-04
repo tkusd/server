@@ -11,8 +11,8 @@ import (
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/util"
 )
 
 func createTestToken(data interface{}, body interface{}) *httptest.ResponseRecorder {

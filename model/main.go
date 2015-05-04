@@ -10,7 +10,7 @@ import (
 
 	"bitbucket.org/liamstask/goose/lib/goose"
 	"github.com/jinzhu/gorm"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/util"
 )
 
 const (

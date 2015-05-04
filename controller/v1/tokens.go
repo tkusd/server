@@ -5,9 +5,9 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/mholt/binding"
-	"github.com/tommy351/app-studio-server/controller/common"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/controller/common"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/util"
 )
 
 type tokenForm struct {

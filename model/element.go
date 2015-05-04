@@ -3,8 +3,8 @@ package model
 import (
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 )
 
 // Element represents the data structure of a element.

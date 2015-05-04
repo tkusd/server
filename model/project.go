@@ -2,8 +2,8 @@ package model
 
 import (
 	"github.com/asaskevich/govalidator"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 )
 
 // Project represents the data structure of a project.

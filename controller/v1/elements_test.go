@@ -10,9 +10,9 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/tommy351/app-studio-server/model"
-	"github.com/tommy351/app-studio-server/model/types"
-	"github.com/tommy351/app-studio-server/util"
+	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/model/types"
+	"github.com/tkusd/server/util"
 )
 
 func createTestElement(project *model.Project, token *model.Token, data interface{}, body interface{}) *httptest.ResponseRecorder {
