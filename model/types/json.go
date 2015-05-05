@@ -19,6 +19,10 @@ func (j *JSONObject) Scan(val interface{}) error {
 
 // Value implements the driver.Valuer interface.
 func (j JSONObject) Value() (driver.Value, error) {
+	if j == nil {
+		return "{}", nil
+	}
+
 	return json.Marshal(j)
 }
 
@@ -36,5 +40,9 @@ func (j *JSONArray) Scan(val interface{}) error {
 
 // Value implements the driver.Valuer interface.
 func (j JSONArray) Value() (driver.Value, error) {
+	if j == nil {
+		return "[]", nil
+	}
+
 	return json.Marshal(j)
 }

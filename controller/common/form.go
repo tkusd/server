@@ -33,7 +33,7 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 			break
 		}
 
-		HandleAPIError(res, &util.APIError{
+		HandleAPIError(res, req, &util.APIError{
 			Code:    code,
 			Message: e.Message,
 			Status:  status,

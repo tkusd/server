@@ -25,6 +25,21 @@ func createTestElement(project *Project) (*Element, error) {
 	return element, nil
 }
 
+func createTestChildElement(element *Element) (*Element, error) {
+	e := &Element{
+		Name:      "Test child element",
+		ProjectID: element.ProjectID,
+		ElementID: element.ID,
+		Type:      types.ElementTypeText,
+	}
+
+	if err := e.Save(); err != nil {
+		return nil, err
+	}
+
+	return e, nil
+}
+
 func TestElement(t *testing.T) {
 	user, err := createTestUser(fixtureUsers[0])
 	defer user.Delete()
@@ -39,20 +54,6 @@ func TestElement(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	Convey("BeforeSave", t, func() {
-		now := time.Now()
-		element := &Element{}
-		element.BeforeSave()
-		So(element.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
-
-	Convey("BeforeCreate", t, func() {
-		now := time.Now()
-		element := &Element{}
-		element.BeforeCreate()
-		So(element.CreatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
 
 	Convey("Save", t, func() {
 		Convey("Trim name", func() {
@@ -116,6 +117,34 @@ func TestElement(t *testing.T) {
 			So(e.ProjectID, ShouldResemble, project.ID)
 			So(e.Type, ShouldEqual, element.Type)
 			So(e.Attributes, ShouldResemble, element.Attributes)
+			So(e.OrderID, ShouldEqual, 1)
+		})
+
+		Convey("Order should be increased", func() {
+			e1 := &Element{
+				Name:      "element 1",
+				ProjectID: project.ID,
+				Type:      types.ElementTypeScreen,
+			}
+			defer e1.Delete()
+
+			if err := e1.Save(); err != nil {
+				log.Fatal(err)
+			}
+
+			e2 := &Element{
+				Name:      "element 2",
+				ProjectID: project.ID,
+				Type:      types.ElementTypeScreen,
+			}
+			defer e2.Delete()
+
+			if err := e2.Save(); err != nil {
+				log.Fatal(err)
+			}
+
+			So(e1.OrderID, ShouldEqual, 1)
+			So(e2.OrderID, ShouldEqual, 2)
 		})
 
 		Convey("Update", func() {
@@ -184,7 +213,6 @@ func TestGetElement(t *testing.T) {
 		}
 
 		So(e.ID, ShouldResemble, element.ID)
-		//So(e.UserID, ShouldResemble, project.UserID)
 	})
 
 	Convey("Failed", t, func() {
@@ -196,5 +224,74 @@ func TestGetElement(t *testing.T) {
 }
 
 func TestGetElementList(t *testing.T) {
-	// TODO: need tests
+	user, err := createTestUser(fixtureUsers[0])
+	defer user.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	project, err := createTestProject(user)
+	defer project.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e1, err := createTestElement(project)
+	defer e1.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e2, err := createTestChildElement(e1)
+	defer e2.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e3, err := createTestChildElement(e1)
+	defer e3.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e4, err := createTestChildElement(e3)
+	defer e4.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	Convey("Project", t, func() {
+		list, err := GetElementList(&ElementQueryOption{
+			ProjectID: &project.ID,
+		})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		So(list[0].ID, ShouldResemble, e1.ID)
+		So(list[0].Elements[0].ID, ShouldResemble, e2.ID)
+		So(list[0].Elements[1].ID, ShouldResemble, e3.ID)
+		So(list[0].Elements[1].Elements[0].ID, ShouldResemble, e4.ID)
+	})
+
+	Convey("Element", t, func() {
+		list, err := GetElementList(&ElementQueryOption{
+			ElementID: &e1.ID,
+		})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		So(list[0].ID, ShouldResemble, e2.ID)
+		So(list[1].ID, ShouldResemble, e3.ID)
+		So(list[1].Elements[0].ID, ShouldResemble, e4.ID)
+	})
 }

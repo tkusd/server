@@ -33,7 +33,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	var user *model.User
 
 	if form.Email == "" {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Code:    util.RequiredError,
 			Message: "Email is required.",
 			Field:   "email",
@@ -42,7 +42,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if !govalidator.IsEmail(form.Email) {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Code:    util.EmailError,
 			Message: "Email is invalid.",
 			Field:   "email",
@@ -51,7 +51,7 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if user, _ = model.GetUserByEmail(form.Email); user == nil {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Field:   "email",
 			Code:    util.UserNotFoundError,
 			Message: "User does not exist.",
@@ -60,19 +60,19 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := user.Authenticate(form.Password); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	token := &model.Token{UserID: user.ID}
 
 	if err := token.Save(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	common.NoCacheHeader(res)
-	common.RenderJSON(res, http.StatusCreated, token)
+	common.APIResponse(res, req, http.StatusCreated, token)
 }
 
 // TokenDestroy handles DELETE /tokens/:key.
@@ -82,7 +82,7 @@ func TokenDestroy(res http.ResponseWriter, req *http.Request) {
 	token, err := model.GetTokenBase64(key)
 
 	if err != nil {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Code:    util.TokenNotFoundError,
 			Message: "Token does not exist.",
 			Status:  http.StatusNotFound,
@@ -92,7 +92,7 @@ func TokenDestroy(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := token.Delete(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 

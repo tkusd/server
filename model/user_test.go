@@ -33,20 +33,6 @@ func createTestUser(data fixtureUser) (*User, error) {
 }
 
 func TestUser(t *testing.T) {
-	Convey("BeforeSave", t, func() {
-		now := time.Now()
-		user := &User{}
-		user.BeforeSave()
-		So(user.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
-
-	Convey("BeforeCreate", t, func() {
-		now := time.Now()
-		user := &User{}
-		user.BeforeCreate()
-		So(user.CreatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
-
 	Convey("Save", t, func() {
 		Convey("Trim name", func() {
 			user := &User{Name: "   abc   "}

@@ -84,9 +84,9 @@ func TestGetUser(t *testing.T) {
 
 	router.GET(userSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if user, err := GetUser(res, req); err != nil {
-			common.HandleAPIError(res, err)
+			common.HandleAPIError(res, req, err)
 		} else {
-			common.RenderJSON(res, http.StatusOK, user)
+			common.APIResponse(res, req, http.StatusOK, user)
 		}
 	}))
 
@@ -213,9 +213,9 @@ func TestGetProject(t *testing.T) {
 	router := httprouter.New()
 	router.GET(projectSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if project, err := GetProject(res, req); err != nil {
-			common.HandleAPIError(res, err)
+			common.HandleAPIError(res, req, err)
 		} else {
-			common.RenderJSON(res, http.StatusOK, project)
+			common.APIResponse(res, req, http.StatusOK, project)
 		}
 	}))
 
@@ -310,9 +310,9 @@ func TestGetElement(t *testing.T) {
 	router := httprouter.New()
 	router.GET(elementSingularURL, common.WrapHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		if element, err := GetElement(res, req); err != nil {
-			common.HandleAPIError(res, err)
+			common.HandleAPIError(res, req, err)
 		} else {
-			common.RenderJSON(res, http.StatusOK, element)
+			common.APIResponse(res, req, http.StatusOK, element)
 		}
 	}))
 

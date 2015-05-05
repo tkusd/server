@@ -17,6 +17,7 @@ func Router() http.Handler {
 
 	r.GET("/", home)
 	r.NotFound = common.NotFound
+	r.HandleMethodNotAllowed = false
 
 	n.Use(common.ClearContext())
 	n.Use(common.NewLogger())
@@ -29,7 +30,7 @@ func Router() http.Handler {
 }
 
 func home(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	common.RenderJSON(res, http.StatusOK, map[string]string{
+	common.APIResponse(res, req, http.StatusOK, map[string]string{
 		"status": "ok",
 	})
 }

@@ -33,20 +33,6 @@ func TestProject(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	Convey("BeforeSave", t, func() {
-		now := time.Now()
-		project := &Project{}
-		project.BeforeSave()
-		So(project.UpdatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
-
-	Convey("BeforeCreate", t, func() {
-		now := time.Now()
-		project := &Project{}
-		project.BeforeCreate()
-		So(project.CreatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
-
 	Convey("Save", t, func() {
 		Convey("Trim title", func() {
 			project := &Project{Title: "   abc   "}

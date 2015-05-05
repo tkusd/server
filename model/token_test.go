@@ -3,8 +3,6 @@ package model
 import (
 	"testing"
 
-	"time"
-
 	"log"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -27,13 +25,6 @@ func TestToken(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	Convey("BeforeCreate", t, func() {
-		now := time.Now()
-		token := &Token{}
-		token.BeforeCreate()
-		So(token.CreatedAt.Time, ShouldHappenOnOrAfter, now)
-	})
 
 	Convey("Save", t, func() {
 		token, err := createTestToken(user)

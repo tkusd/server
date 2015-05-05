@@ -84,7 +84,7 @@ func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.Handle
 		}
 	}
 
-	common.HandleAPIError(res, &util.APIError{
+	common.HandleAPIError(res, req, &util.APIError{
 		Code:    util.UserNotFoundError,
 		Message: "User not found.",
 		Status:  http.StatusNotFound,
@@ -117,7 +117,7 @@ func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.Han
 		}
 	}
 
-	common.HandleAPIError(res, &util.APIError{
+	common.HandleAPIError(res, req, &util.APIError{
 		Code:    util.ProjectNotFoundError,
 		Message: "Project not found.",
 		Status:  http.StatusNotFound,

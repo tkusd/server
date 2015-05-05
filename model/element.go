@@ -11,17 +11,15 @@ import (
 type Element struct {
 	ID         types.UUID        `json:"id"`
 	ProjectID  types.UUID        `json:"project_id"`
-	ElementID  *types.UUID       `json:"element_id"`
-	Next       *types.UUID       `json:"-"`
+	ElementID  types.UUID        `json:"element_id"`
+	OrderID    int               `json:"-"`
 	Name       string            `json:"name"`
 	Type       types.ElementType `json:"type"`
 	CreatedAt  types.Time        `json:"created_at"`
 	UpdatedAt  types.Time        `json:"updated_at"`
 	Attributes types.JSONObject  `json:"attributes"`
 
-	// From project
-	//UserID types.UUID `json:"-" sql:"-"`
-
+	// Virtual attributes
 	Elements []*Element `json:"elements,omitempty" sql:"-"`
 }
 
@@ -38,22 +36,22 @@ func (e *Element) BeforeSave() error {
 }
 
 // BeforeCreate is called when the data is about to be created.
-func (e *Element) BeforeCreate() error {
+func (e *Element) BeforeCreate(tx *gorm.DB) error {
 	e.CreatedAt = types.Now()
+	lastOrder := 0
+	query := tx.Table("elements").Select("order_id").Order("order_id desc").Limit(1)
+
+	if !e.ElementID.IsEmpty() {
+		query = query.Where("element_id = ?", e.ElementID.String())
+	} else if !e.ProjectID.IsEmpty() {
+		query = query.Where("project_id = ?", e.ProjectID.String()).Where("element_id IS NULL")
+	}
+
+	query.Row().Scan(&lastOrder)
+
+	e.OrderID = lastOrder + 1
+
 	return nil
-}
-
-func (e *Element) AfterCreate(tx *gorm.DB) error {
-	return tx.Where(&Element{
-		ProjectID: e.ProjectID,
-		ElementID: e.ElementID,
-	}).Where("next is null").Update("next", e.ID.String()).Error
-}
-
-func (e *Element) BeforeDelete(tx *gorm.DB) error {
-	return tx.Where(&Element{
-		Next: &e.ID,
-	}).Update("next", e.Next).Error
 }
 
 // Save creates or updates data in the database.
@@ -99,18 +97,6 @@ func (e *Element) UpdateOrder(arr []types.UUID) error {
 // GetElement gets the element data.
 func GetElement(id types.UUID) (*Element, error) {
 	e := new(Element)
-	/*
-	   	err := db.Raw(`SELECT e.id, e.project_id, e.element_id, e.next, e.name, e.type, e.created_at, e.updated_at, e.attributes, p.user_id
-	   FROM elements AS e
-	   JOIN projects AS p ON e.project_id = p.id
-	   WHERE e.id = ?
-	   LIMIT 1`, id.String()).
-	   		Row().
-	   		Scan(&e.ID, &e.ProjectID, &e.ElementID, &e.Next, &e.Name, &e.Type, &e.CreatedAt, &e.UpdatedAt, &e.Attributes, &e.UserID)
-
-	   	if err != nil {
-	   		return nil, err
-	   	}*/
 
 	if err := db.Where("id = ?", id.String()).First(e).Error; err != nil {
 		return nil, err
@@ -122,20 +108,43 @@ func GetElement(id types.UUID) (*Element, error) {
 // GetElementList gets a list of elements.
 func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 	var list []*Element
+	var id string
+	var elementID types.UUID
 
-	query := map[string]interface{}{}
-
-	if option.ProjectID != nil {
-		query["project_id"] = option.ProjectID.String()
-	}
+	raw := `WITH RECURSIVE tree AS (
+SELECT elements.*, 1 AS depth FROM elements `
 
 	if option.ElementID != nil {
-		query["element_id"] = option.ElementID.String()
+		elementID = *option.ElementID
+		id = elementID.String()
+		raw += "WHERE element_id = ?"
+	} else if option.ProjectID != nil {
+		id = option.ProjectID.String()
+		raw += "WHERE project_id = ? AND element_id IS NULL"
 	}
 
-	if err := db.Where(query).Find(&list).Error; err != nil {
+	raw += ` UNION ALL
+SELECT elements.*, tree.depth + 1 FROM elements, tree
+WHERE elements.element_id = tree.id
+)
+SELECT * FROM tree ORDER BY depth, order_id;`
+
+	if err := db.Raw(raw, id).Find(&list).Error; err != nil {
 		return nil, err
 	}
 
-	return list, nil
+	return buildElementTree(list, elementID), nil
+}
+
+func buildElementTree(list []*Element, parentID types.UUID) []*Element {
+	var result []*Element
+
+	for i, item := range list {
+		if parentID.Equal(item.ElementID) {
+			result = append(result, item)
+			item.Elements = buildElementTree(list[i:], item.ID)
+		}
+	}
+
+	return result
 }

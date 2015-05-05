@@ -34,7 +34,7 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Name == nil {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Field:   "name",
 			Code:    util.RequiredError,
 			Message: "Name is required.",
@@ -43,7 +43,7 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Email == nil {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Field:   "email",
 			Code:    util.RequiredError,
 			Message: "Email is required.",
@@ -52,7 +52,7 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Password == nil {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Field:   "password",
 			Code:    util.RequiredError,
 			Message: "Password is required.",
@@ -66,18 +66,18 @@ func UserCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := user.GeneratePassword(*form.Password); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	user.SetActivated(false)
 
 	if err := user.Save(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusCreated, user)
+	common.APIResponse(res, req, http.StatusCreated, user)
 }
 
 // UserShow handles GET /users/:user_id.
@@ -85,16 +85,16 @@ func UserShow(res http.ResponseWriter, req *http.Request) {
 	user, err := GetUser(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	err = CheckUserPermission(res, req, user.ID)
 
 	if err == nil {
-		common.RenderJSON(res, http.StatusOK, user)
+		common.APIResponse(res, req, http.StatusOK, user)
 	} else {
-		common.RenderJSON(res, http.StatusOK, user.PublicProfile())
+		common.APIResponse(res, req, http.StatusOK, user.PublicProfile())
 	}
 }
 
@@ -109,12 +109,12 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 	user, err := GetUser(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, user.ID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
@@ -124,7 +124,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 
 	if form.Password != nil {
 		if form.OldPassword == nil {
-			common.HandleAPIError(res, &util.APIError{
+			common.HandleAPIError(res, req, &util.APIError{
 				Field:   "old_password",
 				Code:    util.RequiredError,
 				Message: "Current password is required.",
@@ -133,7 +133,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if err := user.Authenticate(*form.OldPassword); err != nil {
-			common.HandleAPIError(res, &util.APIError{
+			common.HandleAPIError(res, req, &util.APIError{
 				Field:   "old_password",
 				Code:    util.WrongPasswordError,
 				Message: "Password is wrong.",
@@ -142,7 +142,7 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if err := user.GeneratePassword(*form.Password); err != nil {
-			common.HandleAPIError(res, err)
+			common.HandleAPIError(res, req, err)
 			return
 		}
 	}
@@ -152,11 +152,11 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := user.Save(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, user)
+	common.APIResponse(res, req, http.StatusOK, user)
 }
 
 // UserDestroy handles DELETE /users/:user_id.
@@ -164,17 +164,17 @@ func UserDestroy(res http.ResponseWriter, req *http.Request) {
 	user, err := GetUser(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, user.ID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := user.Delete(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 

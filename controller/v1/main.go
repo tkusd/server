@@ -54,6 +54,7 @@ func Router() http.Handler {
 	r.DELETE(tokenSingularURL, common.WrapHandlerFunc(TokenDestroy))
 
 	r.NotFound = common.NotFound
+	r.HandleMethodNotAllowed = false
 
 	n.Use(common.NewRecovery())
 	n.UseHandler(r)

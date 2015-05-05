@@ -6,14 +6,15 @@ import (
 	"github.com/tkusd/server/util"
 )
 
-func HandleAPIError(res http.ResponseWriter, err error) {
+// HandleAPIError handles API errors.
+func HandleAPIError(res http.ResponseWriter, req *http.Request, err error) {
 	switch e := err.(type) {
 	case *util.APIError:
 		if e.Status == 0 {
 			e.Status = http.StatusBadRequest
 		}
 
-		RenderJSON(res, e.Status, e)
+		APIResponse(res, req, e.Status, e)
 		break
 
 	default:

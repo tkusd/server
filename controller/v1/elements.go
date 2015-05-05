@@ -17,18 +17,18 @@ func ElementList(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := CheckProjectPermission(res, req, projectID, false); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	list, err := model.GetElementList(option)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, list)
+	common.APIResponse(res, req, http.StatusOK, list)
 }
 
 type elementForm struct {
@@ -70,12 +70,12 @@ func ElementCreate(res http.ResponseWriter, req *http.Request) {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
@@ -88,11 +88,11 @@ func ElementCreate(res http.ResponseWriter, req *http.Request) {
 	element := &model.Element{ProjectID: project.ID}
 
 	if err := saveElement(form, element); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusCreated, element)
+	common.APIResponse(res, req, http.StatusCreated, element)
 }
 
 // ElementShow handles GET /elements/:element_id.
@@ -100,16 +100,16 @@ func ElementShow(res http.ResponseWriter, req *http.Request) {
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, element)
+	common.APIResponse(res, req, http.StatusOK, element)
 }
 
 // ElementUpdate handles PUT /elements/:element_id.
@@ -123,32 +123,32 @@ func ElementUpdate(res http.ResponseWriter, req *http.Request) {
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if form.ParentID != nil {
-		element.ElementID = form.ParentID
+		element.ElementID = *form.ParentID
 	}
 
 	if err := saveElement(form, element); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if form.Elements != nil {
 		if err := element.UpdateOrder(*form.Elements); err != nil {
-			common.HandleAPIError(res, err)
+			common.HandleAPIError(res, req, err)
 			return
 		}
 	}
 
-	common.RenderJSON(res, http.StatusOK, element)
+	common.APIResponse(res, req, http.StatusOK, element)
 }
 
 // ElementDestroy handles DELETE /elements/:element_id.
@@ -156,17 +156,17 @@ func ElementDestroy(res http.ResponseWriter, req *http.Request) {
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := element.Delete(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 

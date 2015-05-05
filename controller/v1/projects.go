@@ -24,11 +24,11 @@ func ProjectList(res http.ResponseWriter, req *http.Request) {
 	list, err := model.GetProjectList(option)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, list)
+	common.APIResponse(res, req, http.StatusOK, list)
 }
 
 type projectForm struct {
@@ -68,7 +68,7 @@ func ProjectCreate(res http.ResponseWriter, req *http.Request) {
 	userID := types.ParseUUID(common.GetParam(req, userIDParam))
 
 	if err := CheckUserPermission(res, req, userID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
@@ -81,11 +81,11 @@ func ProjectCreate(res http.ResponseWriter, req *http.Request) {
 	project := &model.Project{UserID: userID}
 
 	if err := saveProject(form, project); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusCreated, project)
+	common.APIResponse(res, req, http.StatusCreated, project)
 }
 
 // ProjectShow handles GET /projects/:project_id.
@@ -93,19 +93,19 @@ func ProjectShow(res http.ResponseWriter, req *http.Request) {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	token, err := GetToken(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if project.IsPrivate && !project.UserID.Equal(token.UserID) {
-		common.HandleAPIError(res, &util.APIError{
+		common.HandleAPIError(res, req, &util.APIError{
 			Code:    util.UserForbiddenError,
 			Message: "You are forbidden to access this project.",
 			Status:  http.StatusForbidden,
@@ -113,7 +113,7 @@ func ProjectShow(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, project)
+	common.APIResponse(res, req, http.StatusOK, project)
 }
 
 // ProjectUpdate handles PUT /projects/:project_id.
@@ -127,21 +127,21 @@ func ProjectUpdate(res http.ResponseWriter, req *http.Request) {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := saveProject(form, project); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
-	common.RenderJSON(res, http.StatusOK, project)
+	common.APIResponse(res, req, http.StatusOK, project)
 }
 
 // ProjectDestroy handles DELETE /projects/:project_id.
@@ -149,17 +149,17 @@ func ProjectDestroy(res http.ResponseWriter, req *http.Request) {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 
 	if err := project.Delete(); err != nil {
-		common.HandleAPIError(res, err)
+		common.HandleAPIError(res, req, err)
 		return
 	}
 

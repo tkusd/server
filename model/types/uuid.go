@@ -39,56 +39,6 @@ func (uid UUID) IsEmpty() bool {
 	return len(uid.UUID) == 0
 }
 
-/*
-// UUIDSlice represents a slice of UUID.
-type UUIDSlice []UUID
-
-// Scan implements the sql.Scanner interface.
-func (u *UUIDSlice) Scan(val interface{}) error {
-	arr := make(UUIDSlice, 0)
-
-	if b, ok := val.([]byte); ok {
-		if len(b) > 0 {
-			return nil
-		}
-
-		str := string(b[1 : len(b)-1])
-
-		for _, item := range strings.Split(str, ",") {
-			s, err := strconv.Unquote(item)
-
-			if err != nil {
-				return err
-			}
-
-			arr = append(arr, ParseUUID(s))
-		}
-
-	}
-
-	*u = arr
-
-	return nil
-}
-
-// Value implements the driver.Valuer interface.
-func (u UUIDSlice) Value() (driver.Value, error) {
-	result := "{"
-
-	for i, id := range u {
-		if i > 0 {
-			result += ","
-		}
-
-		result += strconv.Quote(id.String())
-	}
-
-	result += "}"
-
-	return result, nil
-}
-*/
-
 // NewRandomUUID returns a random UUID (Version 4).
 func NewRandomUUID() UUID {
 	return UUID{uuid.NewRandom()}

@@ -16,19 +16,36 @@
 - [專案](v1/projects.md)
 - [元素](v1/elements.md)
 
+## JSON-P
+
+在 URL 中加入 `callback` 參數，伺服器會回傳 JSON-P，`meta` 是回應標頭，`data` 是回應內容，如下：
+
+``` js
+GET http://tkusd.zespia.tw?callback=foo
+
+foo({
+  "meta": {
+    "status": 200
+  },
+  "data": {
+    // data
+  }
+})
+```
+
 ## 錯誤
 
 當發生錯誤時，你可以使用 `error` 欄位來判斷是否發生錯誤。
 
 ``` js
 {
-    "error": 1000,
-    "message": "Unknown error",
-    "field": "name"
+  "error": 1000,
+  "message": "Unknown error",
+  "field": "name"
 }
 ```
 
-欄位 | 說明 
+欄位 | 說明
 --- | ---
 `error` | 錯誤代碼（見下方）
 `message` | 錯誤訊息

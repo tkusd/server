@@ -19,7 +19,7 @@ type recovery struct{}
 func (rec *recovery) ServeHTTP(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 	defer func() {
 		if err := recover(); err != nil {
-			HandleAPIError(res, &util.APIError{
+			HandleAPIError(res, req, &util.APIError{
 				Code:    util.ServerError,
 				Status:  http.StatusInternalServerError,
 				Message: "Internal server error",

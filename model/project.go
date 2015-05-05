@@ -69,25 +69,6 @@ func (p *Project) Exists() bool {
 	return exists("projects", p.ID.String())
 }
 
-/*
-func (p *Project) Elements() ([]*Element, error) {
-
-	var list []*Element
-	var result []*Element
-
-	if err := db.Where("project_id = ?", p.ID.String()).Find(&list).Error; err != nil {
-		return nil, err
-	}
-
-	for i, item := range list {
-		//
-	}
-
-	return result, nil
-
-	db.Raw(``, p.ID.String())
-}*/
-
 // GetProjectList gets a list of projects.
 func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
 	var list []*Project
