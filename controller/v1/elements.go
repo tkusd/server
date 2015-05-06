@@ -31,12 +31,39 @@ func ElementList(res http.ResponseWriter, req *http.Request) {
 	common.APIResponse(res, req, http.StatusOK, list)
 }
 
+func ChildElementList(res http.ResponseWriter, req *http.Request) {
+	element, err := GetElement(res, req)
+	option := &model.ElementQueryOption{
+		ElementID: &element.ID,
+	}
+
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	list, err := model.GetElementList(option)
+
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	common.APIResponse(res, req, http.StatusOK, list)
+}
+
 type elementForm struct {
 	Name       *string            `json:"name"`
 	Type       *types.ElementType `json:"type"`
 	Attributes *types.JSONObject  `json:"attributes"`
 	ParentID   *types.UUID        `json:"parent_id"`
 	Elements   *[]types.UUID      `json:"elements"`
+	Order      *int               `json:"order"`
 }
 
 func (form *elementForm) FieldMap() binding.FieldMap {
@@ -46,6 +73,7 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Attributes: "attributes",
 		&form.ParentID:   "parent_id",
 		&form.Elements:   "elements",
+		&form.Order:      "order",
 	}
 }
 
@@ -90,6 +118,37 @@ func ElementCreate(res http.ResponseWriter, req *http.Request) {
 	if err := saveElement(form, element); err != nil {
 		common.HandleAPIError(res, req, err)
 		return
+	}
+
+	common.APIResponse(res, req, http.StatusCreated, element)
+}
+
+func ChildElementCreate(res http.ResponseWriter, req *http.Request) {
+	parent, err := GetElement(res, req)
+
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	if err := CheckProjectPermission(res, req, parent.ProjectID, true); err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	form := new(elementForm)
+
+	if common.BindForm(res, req, form) {
+		return
+	}
+
+	element := &model.Element{
+		ProjectID: parent.ProjectID,
+		ElementID: parent.ID,
+	}
+
+	if err := saveElement(form, element); err != nil {
+		common.HandleAPIError(res, req, err)
 	}
 
 	common.APIResponse(res, req, http.StatusCreated, element)
@@ -142,10 +201,12 @@ func ElementUpdate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if form.Elements != nil {
-		if err := element.UpdateOrder(*form.Elements); err != nil {
-			common.HandleAPIError(res, req, err)
-			return
-		}
+		// TODO: update element order
+		/*
+			if err := element.UpdateOrder(*form.Elements); err != nil {
+				common.HandleAPIError(res, req, err)
+				return
+			}*/
 	}
 
 	common.APIResponse(res, req, http.StatusOK, element)

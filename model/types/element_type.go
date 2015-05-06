@@ -7,8 +7,8 @@ type ElementType int16
 
 // Element types
 const (
-	ElementTypeScreen ElementType = 1
-	ElementTypeText   ElementType = 2
+	ElementTypeScreen ElementType = iota + 1
+	ElementTypeText
 )
 
 // Element types in string

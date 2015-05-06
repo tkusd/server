@@ -2,9 +2,10 @@ package util
 
 // 1000: Generic error
 const (
-	UnknownError  = 1000
-	ServerError   = 1001
-	NotFoundError = 1002
+	UnknownError           = 1000
+	ServerError            = 1001
+	NotFoundError          = 1002
+	RateLimitExceededError = 1003
 )
 
 // 1100: Validation error

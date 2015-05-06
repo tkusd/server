@@ -90,10 +90,6 @@ func (e *Element) Delete() error {
 	return db.Delete(e).Error
 }
 
-func (e *Element) UpdateOrder(arr []types.UUID) error {
-	return nil
-}
-
 // GetElement gets the element data.
 func GetElement(id types.UUID) (*Element, error) {
 	e := new(Element)
@@ -147,4 +143,22 @@ func buildElementTree(list []*Element, parentID types.UUID) []*Element {
 	}
 
 	return result
+}
+
+func UpdateElementOrder(option *ElementQueryOption, newOrder []types.UUID) error {
+	var oldOrder []types.UUID
+	query := db.Table("elements").Select("id").Order("order_id")
+
+	if option.ElementID != nil {
+		query = query.Where("element_id = ?", option.ElementID.String())
+	} else if option.ProjectID != nil {
+		query = query.Where("project_id = ?", option.ProjectID.String()).
+			Where("element_id IS NULL")
+	}
+
+	if err := query.Scan(&oldOrder).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -19,15 +19,27 @@ func RenderJSON(res http.ResponseWriter, status int, value interface{}) {
 	}
 }
 
+type jsonpData struct {
+	Status int
+	Data   interface{}
+}
+
+func (j jsonpData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"meta": map[string]interface{}{
+			"status": j.Status,
+		},
+		"data": j.Data,
+	})
+}
+
 // RenderJSONP renders JSON-P.
 func RenderJSONP(res http.ResponseWriter, status int, callback string, value interface{}) {
 	res.Header().Set("Content-Type", "application/javascript")
 
-	data := map[string]interface{}{
-		"meta": map[string]interface{}{
-			"status": status,
-		},
-		"data": value,
+	data := &jsonpData{
+		Status: status,
+		Data:   value,
 	}
 
 	if result, err := json.Marshal(data); err == nil {
