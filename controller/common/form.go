@@ -13,6 +13,7 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 		e := err[0]
 		code := util.UnknownError
 		status := http.StatusBadRequest
+		field := ""
 
 		switch e.Classification {
 		case binding.ContentTypeError:
@@ -33,11 +34,15 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 			break
 		}
 
+		if len(e.Fields()) > 0 {
+			field = e.Fields()[0]
+		}
+
 		HandleAPIError(res, req, &util.APIError{
 			Code:    code,
 			Message: e.Message,
 			Status:  status,
-			Field:   e.Fields()[0],
+			Field:   field,
 		})
 
 		return true
