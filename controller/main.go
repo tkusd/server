@@ -23,6 +23,7 @@ func Router() http.Handler {
 	n.Use(common.NewLogger())
 	n.Use(common.NewRecovery())
 	n.Use(gzip.Gzip(gzip.DefaultCompression))
+	n.Use(common.CSR())
 	n.Use(common.NewSubRoute("/v1", v1.Router()))
 	n.UseHandler(r)
 
