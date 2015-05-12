@@ -18,6 +18,7 @@ const (
 	LengthError                 = 1105
 	URLError                    = 1106
 	UnsupportedElementTypeError = 1107
+	UUIDError                   = 1108
 )
 
 // 1200: Resource error
@@ -30,11 +31,13 @@ const (
 
 // 1300: Data error
 const (
-	WrongPasswordError = 1300
-	EmailUsedError     = 1301
-	TokenRequiredError = 1302
-	TokenInvalidError  = 1303
-	UserForbiddenError = 1304
+	WrongPasswordError           = 1300
+	EmailUsedError               = 1301
+	TokenRequiredError           = 1302
+	TokenInvalidError            = 1303
+	UserForbiddenError           = 1304
+	ElementNotInTreeError        = 1305
+	ElementTreeNotCompletedError = 1306
 )
 
 // APIError represents an API error.

@@ -8,6 +8,14 @@ POST /v1/users
 
 ### Request
 
+``` js
+{
+  "name": "abc",
+  "email": "abc@example.com",
+  "password": "123456"
+}
+```
+
 參數 | 型別 | 說明 | 預設值
 --- | --- | --- | ---
 `name` | string | 姓名。最大長度 100。 | **必填**
@@ -15,6 +23,18 @@ POST /v1/users
 `password` | string | 密碼。長度為 6~50。 | **必填**
 
 ### Response
+
+``` js
+{
+  "id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
+  "name": "abc",
+  "email": "abc@example.com",
+  "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
+  "created_at": "2015-05-08T05:04:35Z",
+  "updated_at": "2015-05-08T05:04:35Z",
+  "is_activated": false
+}
+```
 
 名稱 | 型別 | 說明
 --- | --- | ---
@@ -34,6 +54,32 @@ GET /v1/users/:user_id
 
 ### Response
 
+包含隱私資訊：
+
+``` js
+{
+  "id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
+  "name": "abc",
+  "email": "abc@example.com",
+  "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
+  "created_at": "2015-05-08T05:04:35Z",
+  "updated_at": "2015-05-08T05:04:35Z",
+  "is_activated": false
+}
+```
+
+不包含隱私資訊：
+
+``` js
+{
+  "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
+  "created_at": "2015-05-08T05:04:35Z",
+  "id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
+  "name": "abc",
+  "updated_at": "2015-05-08T05:04:35Z"
+}
+```
+
 名稱 | 型別 | 說明
 --- | --- | ---
 `id` | uuid | ID
@@ -52,6 +98,15 @@ PUT /v1/users/:user_id
 
 ### Request
 
+``` js
+{
+  "name": "abc",
+  "email": "abc@example.com",
+  "password": "234567",
+  "old_password": "123456"
+}
+```
+
 參數 | 型別 | 說明
 --- | --- | ---
 `name` | string | 姓名。最大長度 100。
@@ -60,6 +115,18 @@ PUT /v1/users/:user_id
 `old_password` | string | 目前密碼。如果要更改密碼的話必填。
 
 ### Response
+
+``` js
+{
+  "id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
+  "name": "abc",
+  "email": "abc@example.com",
+  "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
+  "created_at": "2015-05-08T05:04:35Z",
+  "updated_at": "2015-05-08T05:04:35Z",
+  "is_activated": false
+}
+```
 
 名稱 | 型別 | 說明
 --- | --- | ---

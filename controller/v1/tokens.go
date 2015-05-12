@@ -23,78 +23,95 @@ func (form *tokenForm) FieldMap() binding.FieldMap {
 }
 
 // TokenCreate handles POST /tokens.
-func TokenCreate(res http.ResponseWriter, req *http.Request) {
+func TokenCreate(res http.ResponseWriter, req *http.Request) error {
 	form := new(tokenForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
 	var user *model.User
 
 	if form.Email == "" {
-		common.HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Code:    util.RequiredError,
 			Message: "Email is required.",
 			Field:   "email",
-		})
-		return
+		}
 	}
 
 	if !govalidator.IsEmail(form.Email) {
-		common.HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Code:    util.EmailError,
 			Message: "Email is invalid.",
 			Field:   "email",
-		})
-		return
+		}
 	}
 
 	if user, _ = model.GetUserByEmail(form.Email); user == nil {
-		common.HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Field:   "email",
 			Code:    util.UserNotFoundError,
 			Message: "User does not exist.",
-		})
-		return
+		}
 	}
 
 	if err := user.Authenticate(form.Password); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	token := &model.Token{UserID: user.ID}
 
 	if err := token.Save(); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.NoCacheHeader(res)
 	common.APIResponse(res, req, http.StatusCreated, token)
+
+	return nil
 }
 
-// TokenDestroy handles DELETE /tokens/:key.
-func TokenDestroy(res http.ResponseWriter, req *http.Request) {
+// TokenUpdate handles PUT /tokens/:key.
+func TokenUpdate(res http.ResponseWriter, req *http.Request) error {
 	key := common.GetParam(req, keyParam)
-
 	token, err := model.GetTokenBase64(key)
 
 	if err != nil {
-		common.HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Code:    util.TokenNotFoundError,
 			Message: "Token does not exist.",
 			Status:  http.StatusNotFound,
-		})
+		}
+	}
 
-		return
+	if err := token.Save(); err != nil {
+		return err
+	}
+
+	common.NoCacheHeader(res)
+	common.APIResponse(res, req, http.StatusOK, token)
+
+	return nil
+}
+
+// TokenDestroy handles DELETE /tokens/:key.
+func TokenDestroy(res http.ResponseWriter, req *http.Request) error {
+	key := common.GetParam(req, keyParam)
+	token, err := model.GetTokenBase64(key)
+
+	if err != nil {
+		return &util.APIError{
+			Code:    util.TokenNotFoundError,
+			Message: "Token does not exist.",
+			Status:  http.StatusNotFound,
+		}
 	}
 
 	if err := token.Delete(); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+	return nil
 }

@@ -8,12 +8,27 @@ POST /v1/tokens
 
 ### Request
 
+``` js
+{
+  "email": "abc@example.com",
+  "password": "123456"
+}
+```
+
 參數 | 型別 | 說明 | 預設值
 --- | --- | --- | ---
 `email` | string | Email | **必填**
 `password` | string | 密碼 | **必填**
 
 ### Response
+
+``` js
+{
+  "id": "2o-j6R88UfFHQuHqiRA8rZQZDnc_-9SlJF3RICNxFag=",
+  "user_id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
+  "created_at": "2015-05-08T05:08:06Z"
+}
+```
 
 名稱 | 型別 | 說明
 --- | --- | ---

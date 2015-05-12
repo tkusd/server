@@ -8,7 +8,7 @@ import (
 )
 
 // BindForm binds data to the struct.
-func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMapper) bool {
+func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMapper) error {
 	if err := binding.Bind(req, mapper); err != nil {
 		e := err[0]
 		code := util.UnknownError
@@ -38,15 +38,13 @@ func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMa
 			field = e.Fields()[0]
 		}
 
-		HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Code:    code,
 			Message: e.Message,
 			Status:  status,
 			Field:   field,
-		})
-
-		return true
+		}
 	}
 
-	return false
+	return nil
 }

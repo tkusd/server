@@ -34,28 +34,29 @@ func Router() http.Handler {
 	n := negroni.New()
 	r := httprouter.New()
 
-	r.POST(userCollectionURL, common.WrapHandlerFunc(UserCreate))
-	r.GET(userSingularURL, common.WrapHandlerFunc(UserShow))
-	r.PUT(userSingularURL, common.WrapHandlerFunc(UserUpdate))
-	r.DELETE(userSingularURL, common.WrapHandlerFunc(UserDestroy))
+	r.POST(userCollectionURL, common.WrapCommonHandle(UserCreate))
+	r.GET(userSingularURL, common.WrapCommonHandle(UserShow))
+	r.PUT(userSingularURL, common.WrapCommonHandle(UserUpdate))
+	r.DELETE(userSingularURL, common.WrapCommonHandle(UserDestroy))
 
 	r.GET(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectList))
 	r.POST(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectCreate))
-	r.GET(projectSingularURL, common.WrapHandlerFunc(ProjectShow))
-	r.PUT(projectSingularURL, common.WrapHandlerFunc(ProjectUpdate))
-	r.DELETE(projectSingularURL, common.WrapHandlerFunc(ProjectDestroy))
+	r.GET(projectSingularURL, common.WrapCommonHandle(ProjectShow))
+	r.PUT(projectSingularURL, common.WrapCommonHandle(ProjectUpdate))
+	r.DELETE(projectSingularURL, common.WrapCommonHandle(ProjectDestroy))
 
 	r.GET(elementCollectionURL, common.ChainHandler(CheckProjectExist, ElementList))
-	r.POST(elementCollectionURL, common.WrapHandlerFunc(ElementCreate))
-	r.GET(elementSingularURL, common.WrapHandlerFunc(ElementShow))
-	r.PUT(elementSingularURL, common.WrapHandlerFunc(ElementUpdate))
-	r.DELETE(elementSingularURL, common.WrapHandlerFunc(ElementDestroy))
+	r.POST(elementCollectionURL, common.WrapCommonHandle(ElementCreate))
+	r.GET(elementSingularURL, common.WrapCommonHandle(ElementShow))
+	r.PUT(elementSingularURL, common.WrapCommonHandle(ElementUpdate))
+	r.DELETE(elementSingularURL, common.WrapCommonHandle(ElementDestroy))
 
-	r.GET(childElementCollectionURL, common.WrapHandlerFunc(ChildElementList))
-	r.POST(childElementCollectionURL, common.WrapHandlerFunc(ChildElementCreate))
+	r.GET(childElementCollectionURL, common.WrapCommonHandle(ChildElementList))
+	r.POST(childElementCollectionURL, common.WrapCommonHandle(ChildElementCreate))
 
-	r.POST(tokenCollectionURL, common.WrapHandlerFunc(TokenCreate))
-	r.DELETE(tokenSingularURL, common.WrapHandlerFunc(TokenDestroy))
+	r.POST(tokenCollectionURL, common.WrapCommonHandle(TokenCreate))
+	r.PUT(tokenSingularURL, common.WrapCommonHandle(TokenUpdate))
+	r.DELETE(tokenSingularURL, common.WrapCommonHandle(TokenDestroy))
 
 	r.NotFound = common.NotFound
 	r.HandleMethodNotAllowed = false

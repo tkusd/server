@@ -57,7 +57,7 @@ GET /v1/projects/:project_id
 `title` | string | 標題。最長為 255。
 `description` | string | 描述
 `is_private` | boolean | 是否為私人專案
-`elements` | []uuid | 元素
+`elements` | []uuid | 子元素
 
 ### Response
 

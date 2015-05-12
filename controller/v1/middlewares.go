@@ -13,6 +13,28 @@ import (
 
 var rToken = regexp.MustCompile(`Bearer ([A-Za-z0-9\-\._~\+\/]+=*)`)
 
+func GetIDParam(req *http.Request, param string) (*types.UUID, error) {
+	id := common.GetParam(req, param)
+
+	if id == "" {
+		return nil, &util.APIError{
+			Code:    util.RequiredError,
+			Message: "ID is required.",
+		}
+	}
+
+	uid := types.ParseUUID(id)
+
+	if !uid.Valid() {
+		return nil, &util.APIError{
+			Code:    util.UUIDError,
+			Message: "UUID is invalid.",
+		}
+	}
+
+	return &uid, nil
+}
+
 // GetToken checks the Authorization header and gets the token from the database.
 func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) {
 	authHeader := req.Header.Get("Authorization")
@@ -41,10 +63,14 @@ func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) 
 
 // GetUser parses user_id in the URL and gets the user data from the database.
 func GetUser(res http.ResponseWriter, req *http.Request) (*model.User, error) {
-	if id := common.GetParam(req, userIDParam); id != "" {
-		if user, err := model.GetUser(types.ParseUUID(id)); err == nil {
-			return user, nil
-		}
+	id, err := GetIDParam(req, userIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if user, err := model.GetUser(*id); err == nil {
+		return user, nil
 	}
 
 	return nil, &util.APIError{
@@ -75,13 +101,18 @@ func CheckUserPermission(res http.ResponseWriter, req *http.Request, userID type
 
 // CheckUserExist checks whether the user exists or not.
 func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	if id := common.GetParam(req, userIDParam); id != "" {
-		user := &model.User{ID: types.ParseUUID(id)}
+	id, err := GetIDParam(req, userIDParam)
 
-		if user.Exists() {
-			next(res, req)
-			return
-		}
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	user := &model.User{ID: *id}
+
+	if user.Exists() {
+		next(res, req)
+		return
 	}
 
 	common.HandleAPIError(res, req, &util.APIError{
@@ -93,10 +124,14 @@ func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.Handle
 
 // GetProject parses project_id in the URL and gets the project data from the database.
 func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, error) {
-	if id := common.GetParam(req, projectIDParam); id != "" {
-		if project, err := model.GetProject(types.ParseUUID(id)); err == nil {
-			return project, nil
-		}
+	id, err := GetIDParam(req, projectIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if project, err := model.GetProject(*id); err == nil {
+		return project, nil
 	}
 
 	return nil, &util.APIError{
@@ -108,13 +143,18 @@ func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, err
 
 // CheckProjectExist checks whether the project exists or not.
 func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	if id := common.GetParam(req, projectIDParam); id != "" {
-		project := &model.Project{ID: types.ParseUUID(id)}
+	id, err := GetIDParam(req, projectIDParam)
 
-		if project.Exists() {
-			next(res, req)
-			return
-		}
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	project := &model.Project{ID: *id}
+
+	if project.Exists() {
+		next(res, req)
+		return
 	}
 
 	common.HandleAPIError(res, req, &util.APIError{
@@ -126,10 +166,14 @@ func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.Han
 
 // GetElement parses element_id in the URL and gets the element data from the database.
 func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, error) {
-	if id := common.GetParam(req, elementIDParam); id != "" {
-		if element, err := model.GetElement(types.ParseUUID(id)); err == nil {
-			return element, nil
-		}
+	id, err := GetIDParam(req, elementIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if element, err := model.GetElement(*id); err != nil {
+		return element, nil
 	}
 
 	return nil, &util.APIError{

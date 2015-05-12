@@ -10,60 +10,60 @@ import (
 )
 
 // ElementList handles GET /projects/:project_id/elements.
-func ElementList(res http.ResponseWriter, req *http.Request) {
-	projectID := types.ParseUUID(common.GetParam(req, projectIDParam))
-	option := &model.ElementQueryOption{
-		ProjectID: &projectID,
+func ElementList(res http.ResponseWriter, req *http.Request) error {
+	projectID, err := GetIDParam(req, projectIDParam)
+
+	if err != nil {
+		return err
 	}
 
-	if err := CheckProjectPermission(res, req, projectID, false); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+	option := &model.ElementQueryOption{
+		ProjectID: projectID,
+	}
+
+	if err := CheckProjectPermission(res, req, *projectID, false); err != nil {
+		return err
 	}
 
 	list, err := model.GetElementList(option)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusOK, list)
+	return nil
 }
 
-func ChildElementList(res http.ResponseWriter, req *http.Request) {
+func ChildElementList(res http.ResponseWriter, req *http.Request) error {
 	element, err := GetElement(res, req)
 	option := &model.ElementQueryOption{
 		ElementID: &element.ID,
 	}
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	list, err := model.GetElementList(option)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusOK, list)
+	return nil
 }
 
 type elementForm struct {
-	Name       *string            `json:"name"`
-	Type       *types.ElementType `json:"type"`
-	Attributes *types.JSONObject  `json:"attributes"`
-	ParentID   *types.UUID        `json:"parent_id"`
-	Elements   *[]types.UUID      `json:"elements"`
-	Order      *int               `json:"order"`
+	Name       *string                  `json:"name"`
+	Type       *types.ElementType       `json:"type"`
+	Attributes *types.JSONObject        `json:"attributes"`
+	Elements   *[]model.ElementTreeItem `json:"elements"`
 }
 
 func (form *elementForm) FieldMap() binding.FieldMap {
@@ -71,9 +71,7 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Name:       "name",
 		&form.Type:       "type",
 		&form.Attributes: "attributes",
-		&form.ParentID:   "parent_id",
 		&form.Elements:   "elements",
-		&form.Order:      "order",
 	}
 }
 
@@ -94,52 +92,48 @@ func saveElement(form *elementForm, element *model.Element) error {
 }
 
 // ElementCreate handles POST /projects/:project_id/elements.
-func ElementCreate(res http.ResponseWriter, req *http.Request) {
+func ElementCreate(res http.ResponseWriter, req *http.Request) error {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	form := new(elementForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
 	element := &model.Element{ProjectID: project.ID}
 
 	if err := saveElement(form, element); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusCreated, element)
+	return nil
 }
 
-func ChildElementCreate(res http.ResponseWriter, req *http.Request) {
+func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
 	parent, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckProjectPermission(res, req, parent.ProjectID, true); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	form := new(elementForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
 	element := &model.Element{
@@ -148,88 +142,81 @@ func ChildElementCreate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := saveElement(form, element); err != nil {
-		common.HandleAPIError(res, req, err)
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusCreated, element)
+	return nil
 }
 
 // ElementShow handles GET /elements/:element_id.
-func ElementShow(res http.ResponseWriter, req *http.Request) {
+func ElementShow(res http.ResponseWriter, req *http.Request) error {
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusOK, element)
+	return nil
 }
 
 // ElementUpdate handles PUT /elements/:element_id.
-func ElementUpdate(res http.ResponseWriter, req *http.Request) {
+func ElementUpdate(res http.ResponseWriter, req *http.Request) error {
 	form := new(elementForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
-	}
-
-	if form.ParentID != nil {
-		element.ElementID = *form.ParentID
+		return err
 	}
 
 	if err := saveElement(form, element); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if form.Elements != nil {
-		// TODO: update element order
-		/*
-			if err := element.UpdateOrder(*form.Elements); err != nil {
-				common.HandleAPIError(res, req, err)
-				return
-			}*/
+		option := &model.ElementQueryOption{
+			ElementID: &element.ID,
+		}
+
+		if err := model.UpdateElementOrder(option, *form.Elements); err != nil {
+			return err
+		}
 	}
 
 	common.APIResponse(res, req, http.StatusOK, element)
+	return nil
 }
 
 // ElementDestroy handles DELETE /elements/:element_id.
-func ElementDestroy(res http.ResponseWriter, req *http.Request) {
+func ElementDestroy(res http.ResponseWriter, req *http.Request) error {
 	element, err := GetElement(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := element.Delete(); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+	return nil
 }

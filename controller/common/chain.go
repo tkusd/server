@@ -30,7 +30,13 @@ func ChainHandler(handlers ...interface{}) httprouter.Handle {
 		case negroni.Handler:
 			n.Use(h)
 			break
+
+		case Handle:
+		case func(http.ResponseWriter, *http.Request) error:
+			n.Use(&handleForNegroni{h})
+			break
 		}
+
 	}
 
 	return WrapHandler(n)

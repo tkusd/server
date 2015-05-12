@@ -6,36 +6,40 @@ import (
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
-	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
 
 // ProjectList handles GET /users/:user_id/projects.
-func ProjectList(res http.ResponseWriter, req *http.Request) {
-	userID := types.ParseUUID(common.GetParam(req, userIDParam))
-	option := &model.ProjectQueryOption{
-		UserID: &userID,
+func ProjectList(res http.ResponseWriter, req *http.Request) error {
+	userID, err := GetIDParam(req, userIDParam)
+
+	if err != nil {
+		return err
 	}
 
-	if err := CheckUserPermission(res, req, userID); err == nil {
+	option := &model.ProjectQueryOption{
+		UserID: userID,
+	}
+
+	if err := CheckUserPermission(res, req, *userID); err == nil {
 		option.Private = true
 	}
 
 	list, err := model.GetProjectList(option)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusOK, list)
+	return nil
 }
 
 type projectForm struct {
-	Title       *string       `json:"title"`
-	Description *string       `json:"description"`
-	IsPrivate   *bool         `json:"is_private"`
-	Elements    *[]types.UUID `json:"elements"`
+	Title       *string                  `json:"title"`
+	Description *string                  `json:"description"`
+	IsPrivate   *bool                    `json:"is_private"`
+	Elements    *[]model.ElementTreeItem `json:"elements"`
 }
 
 func (form *projectForm) FieldMap() binding.FieldMap {
@@ -64,104 +68,111 @@ func saveProject(form *projectForm, project *model.Project) error {
 }
 
 // ProjectCreate handles POST /users/:user_id/projects.
-func ProjectCreate(res http.ResponseWriter, req *http.Request) {
-	userID := types.ParseUUID(common.GetParam(req, userIDParam))
+func ProjectCreate(res http.ResponseWriter, req *http.Request) error {
+	userID, err := GetIDParam(req, userIDParam)
 
-	if err := CheckUserPermission(res, req, userID); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+	if err != nil {
+		return err
+	}
+
+	if err := CheckUserPermission(res, req, *userID); err != nil {
+		return err
 	}
 
 	form := new(projectForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
-	project := &model.Project{UserID: userID}
+	project := &model.Project{UserID: *userID}
 
 	if err := saveProject(form, project); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusCreated, project)
+	return nil
 }
 
 // ProjectShow handles GET /projects/:project_id.
-func ProjectShow(res http.ResponseWriter, req *http.Request) {
+func ProjectShow(res http.ResponseWriter, req *http.Request) error {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	token, err := GetToken(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if project.IsPrivate && !project.UserID.Equal(token.UserID) {
-		common.HandleAPIError(res, req, &util.APIError{
+		return &util.APIError{
 			Code:    util.UserForbiddenError,
 			Message: "You are forbidden to access this project.",
 			Status:  http.StatusForbidden,
-		})
-		return
+		}
 	}
 
 	common.APIResponse(res, req, http.StatusOK, project)
+	return nil
 }
 
 // ProjectUpdate handles PUT /projects/:project_id.
-func ProjectUpdate(res http.ResponseWriter, req *http.Request) {
+func ProjectUpdate(res http.ResponseWriter, req *http.Request) error {
 	form := new(projectForm)
 
-	if common.BindForm(res, req, form) {
-		return
+	if err := common.BindForm(res, req, form); err != nil {
+		return err
 	}
 
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := saveProject(form, project); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
+	}
+
+	if form.Elements != nil {
+		option := &model.ElementQueryOption{
+			ProjectID: &project.ID,
+		}
+
+		if err := model.UpdateElementOrder(option, *form.Elements); err != nil {
+			return err
+		}
 	}
 
 	common.APIResponse(res, req, http.StatusOK, project)
+	return nil
 }
 
 // ProjectDestroy handles DELETE /projects/:project_id.
-func ProjectDestroy(res http.ResponseWriter, req *http.Request) {
+func ProjectDestroy(res http.ResponseWriter, req *http.Request) error {
 	project, err := GetProject(res, req)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := CheckUserPermission(res, req, project.UserID); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	if err := project.Delete(); err != nil {
-		common.HandleAPIError(res, req, err)
-		return
+		return err
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+	return nil
 }

@@ -16,6 +16,7 @@ func Router() http.Handler {
 	r := httprouter.New()
 
 	r.GET("/", home)
+	r.GET("/activation/:key", UserActivation)
 	r.NotFound = common.NotFound
 	r.HandleMethodNotAllowed = false
 
@@ -34,4 +35,8 @@ func home(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	common.APIResponse(res, req, http.StatusOK, map[string]string{
 		"status": "ok",
 	})
+}
+
+func UserActivation(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
+	//
 }

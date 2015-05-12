@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"testing"
@@ -238,6 +239,14 @@ func TestGetElementList(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	/**
+	project
+	|- e1
+		|- e2
+		|- e3
+			|- e4
+	*/
+
 	e1, err := createTestElement(project)
 	defer e1.Delete()
 
@@ -293,5 +302,141 @@ func TestGetElementList(t *testing.T) {
 		So(list[0].ID, ShouldResemble, e2.ID)
 		So(list[1].ID, ShouldResemble, e3.ID)
 		So(list[1].Elements[0].ID, ShouldResemble, e4.ID)
+	})
+
+	Convey("Flat", t, func() {
+		list, err := GetElementList(&ElementQueryOption{
+			ProjectID: &project.ID,
+			Flat:      true,
+		})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		So(list[0].ID, ShouldResemble, e1.ID)
+		So(list[1].ID, ShouldResemble, e2.ID)
+		So(list[2].ID, ShouldResemble, e3.ID)
+		So(list[3].ID, ShouldResemble, e4.ID)
+	})
+
+	Convey("Depth", t, func() {
+		list, err := GetElementList(&ElementQueryOption{
+			ProjectID: &project.ID,
+			Depth:     2,
+		})
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		So(len(list[0].Elements[1].Elements), ShouldEqual, 0)
+	})
+}
+
+func TestUpdateElementOrder(t *testing.T) {
+	user, err := createTestUser(fixtureUsers[0])
+	defer user.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	project, err := createTestProject(user)
+	defer project.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	/**
+	project
+	|- e1
+		|- e2
+		|- e3
+			|- e4
+	*/
+
+	e1, err := createTestElement(project)
+	defer e1.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e2, err := createTestChildElement(e1)
+	defer e2.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e3, err := createTestChildElement(e1)
+	defer e3.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	e4, err := createTestChildElement(e3)
+	defer e4.Delete()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	Convey("Not one of the children", t, func() {
+		option := &ElementQueryOption{
+			ElementID: &e3.ID,
+		}
+		tree := []ElementTreeItem{
+			ElementTreeItem{ID: e1.ID},
+		}
+		err := UpdateElementOrder(option, tree)
+
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ElementNotInTreeError,
+			Message: fmt.Sprintf("Element %s is not a child of the specified element.", e1.ID.String()),
+		})
+	})
+
+	Convey("Not complete list of children", t, func() {
+		option := &ElementQueryOption{
+			ElementID: &e1.ID,
+		}
+		tree := []ElementTreeItem{
+			ElementTreeItem{ID: e2.ID},
+			ElementTreeItem{ID: e4.ID},
+		}
+		err := UpdateElementOrder(option, tree)
+
+		So(err, ShouldResemble, &util.APIError{
+			Code:    util.ElementTreeNotCompletedError,
+			Message: "You didn't provide the full list of children.",
+		})
+	})
+
+	Convey("Success", t, func() {
+		option := &ElementQueryOption{
+			ElementID: &e1.ID,
+		}
+		tree := []ElementTreeItem{
+			ElementTreeItem{ID: e3.ID},
+			ElementTreeItem{ID: e4.ID},
+			ElementTreeItem{ID: e2.ID},
+		}
+		err := UpdateElementOrder(option, tree)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		list, _ := GetElementList(option)
+
+		So(len(list), ShouldEqual, 3)
+		So(list[0].ID, ShouldResemble, e3.ID)
+		So(list[1].ID, ShouldResemble, e4.ID)
+		So(list[1].ElementID, ShouldResemble, e1.ID)
+		So(list[2].ID, ShouldResemble, e2.ID)
 	})
 }

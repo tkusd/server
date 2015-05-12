@@ -60,8 +60,21 @@ PUT /v1/elements/:element_id
 `name` | string | 名稱
 `type` | string | 類別
 `attributes` | object | 屬性
-`parent_id` | uuid | 母元素 ID
-`elements` | []uuid | 子元素 ID 陣列
+`elements` | []uuid | 子元素
+
+#### 更新元素排序
+
+更新元素排序比較複雜，`elements` 中必須包含所有子元素，陣列中可使用字串或是帶有 `id` 和 `elements` 屬性的物件，如下：
+
+``` js
+[
+    "b91ef654-b81f-4306-87fb-24d27f562b03",
+    {
+        "id": "c7dfdd95-b3e5-47b1-87cf-24ff50dcc35d",
+        "elements": ["96e7f5dd-fbda-4062-8c88-209c4ffb5f9d"]
+    }
+]
+```
 
 ### Response
 

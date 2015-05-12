@@ -22,7 +22,7 @@ func (uid *UUID) Scan(val interface{}) error {
 
 // Value implements the driver.Valuer interface.
 func (uid UUID) Value() (driver.Value, error) {
-	if uid.IsEmpty() {
+	if !uid.Valid() {
 		return nil, nil
 	}
 
@@ -34,9 +34,9 @@ func (uid UUID) Equal(a UUID) bool {
 	return uuid.Equal(uid.UUID, a.UUID)
 }
 
-// IsEmpty check whether the UUID is empty or not.
-func (uid UUID) IsEmpty() bool {
-	return len(uid.UUID) == 0
+// Valid returns true if UUID is valid.
+func (uid UUID) Valid() bool {
+	return uid.UUID.Variant() != uuid.Invalid
 }
 
 // NewRandomUUID returns a random UUID (Version 4).

@@ -1,6 +1,11 @@
 package model
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/tkusd/server/model/types"
@@ -27,6 +32,9 @@ type Element struct {
 type ElementQueryOption struct {
 	ProjectID *types.UUID
 	ElementID *types.UUID
+	Flat      bool
+	Depth     uint
+	Select    []string
 }
 
 // BeforeSave is called when the data is about to be saved.
@@ -39,16 +47,21 @@ func (e *Element) BeforeSave() error {
 func (e *Element) BeforeCreate(tx *gorm.DB) error {
 	e.CreatedAt = types.Now()
 	lastOrder := 0
-	query := tx.Table("elements").Select("order_id").Order("order_id desc").Limit(1)
+	query := tx.Table("elements").
+		Select("order_id").
+		Order("order_id desc").
+		Limit(1)
 
-	if !e.ElementID.IsEmpty() {
+	if e.ElementID.Valid() {
 		query = query.Where("element_id = ?", e.ElementID.String())
-	} else if !e.ProjectID.IsEmpty() {
-		query = query.Where("project_id = ?", e.ProjectID.String()).Where("element_id IS NULL")
+	} else if e.ProjectID.Valid() {
+		query = query.Where("project_id = ?", e.ProjectID.String()).
+			Where("element_id is null")
+	} else {
+		return errors.New("UUID is invalid")
 	}
 
 	query.Row().Scan(&lastOrder)
-
 	e.OrderID = lastOrder + 1
 
 	return nil
@@ -106,27 +119,47 @@ func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 	var list []*Element
 	var id string
 	var elementID types.UUID
+	var columns []string
+
+	if len(option.Select) == 0 {
+		option.Select = []string{"*"}
+	}
+
+	for _, col := range option.Select {
+		columns = append(columns, "elements."+col)
+	}
+
+	selectColumns := strings.Join(columns, ",")
 
 	raw := `WITH RECURSIVE tree AS (
-SELECT elements.*, 1 AS depth FROM elements `
+SELECT ` + selectColumns + `, 1 AS depth FROM elements WHERE `
 
 	if option.ElementID != nil {
 		elementID = *option.ElementID
 		id = elementID.String()
-		raw += "WHERE element_id = ?"
+		raw += "element_id = ?"
 	} else if option.ProjectID != nil {
 		id = option.ProjectID.String()
-		raw += "WHERE project_id = ? AND element_id IS NULL"
+		raw += "project_id = ? AND element_id IS NULL"
 	}
 
 	raw += ` UNION ALL
-SELECT elements.*, tree.depth + 1 FROM elements, tree
-WHERE elements.element_id = tree.id
-)
+SELECT ` + selectColumns + `, tree.depth + 1 FROM elements, tree
+WHERE elements.element_id = tree.id`
+
+	if option.Depth > 0 {
+		raw += " AND tree.depth < " + strconv.Itoa(int(option.Depth))
+	}
+
+	raw += `)
 SELECT * FROM tree ORDER BY depth, order_id;`
 
 	if err := db.Raw(raw, id).Find(&list).Error; err != nil {
 		return nil, err
+	}
+
+	if option.Flat {
+		return list, nil
 	}
 
 	return buildElementTree(list, elementID), nil
@@ -145,19 +178,94 @@ func buildElementTree(list []*Element, parentID types.UUID) []*Element {
 	return result
 }
 
-func UpdateElementOrder(option *ElementQueryOption, newOrder []types.UUID) error {
-	var oldOrder []types.UUID
-	query := db.Table("elements").Select("id").Order("order_id")
-
-	if option.ElementID != nil {
-		query = query.Where("element_id = ?", option.ElementID.String())
-	} else if option.ProjectID != nil {
-		query = query.Where("project_id = ?", option.ProjectID.String()).
-			Where("element_id IS NULL")
+func UpdateElementOrder(option *ElementQueryOption, tree []ElementTreeItem) error {
+	if err := checkElementTree(option, tree); err != nil {
+		return err
 	}
 
-	if err := query.Scan(&oldOrder).Error; err != nil {
+	var parentID types.UUID
+	tx := db.Begin()
+
+	if option.ElementID != nil {
+		parentID = *option.ElementID
+	}
+
+	if err := updateElementOrderInTx(tx, parentID, tree); err != nil {
+		tx.Rollback()
 		return err
+	}
+
+	tx.Commit()
+	return nil
+}
+
+func checkElementTree(option *ElementQueryOption, tree []ElementTreeItem) error {
+	children, err := GetElementList(&ElementQueryOption{
+		ProjectID: option.ProjectID,
+		ElementID: option.ElementID,
+		Flat:      true,
+		Select:    []string{"id", "order_id"}, // order_id is needed for sorting
+	})
+
+	if err != nil {
+		return err
+	}
+
+	ids := pickElementIDFromTree(tree)
+
+	if len(ids) != len(children) {
+		return &util.APIError{
+			Code:    util.ElementTreeNotCompletedError,
+			Message: "You didn't provide the full list of children.",
+		}
+	}
+
+	for _, id := range ids {
+		found := false
+
+		for _, elem := range children {
+			if id.Equal(elem.ID) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return &util.APIError{
+				Code:    util.ElementNotInTreeError,
+				Message: fmt.Sprintf("Element %s is not a child of the specified element.", id.String()),
+			}
+		}
+	}
+
+	return nil
+}
+
+func pickElementIDFromTree(tree []ElementTreeItem) []types.UUID {
+	var list []types.UUID
+
+	for _, item := range tree {
+		list = append(list, item.ID)
+		list = append(list, pickElementIDFromTree(item.Elements)...)
+	}
+
+	return list
+}
+
+func updateElementOrderInTx(tx *gorm.DB, parentID types.UUID, tree []ElementTreeItem) error {
+	for i, item := range tree {
+		data := map[string]interface{}{
+			"element_id": parentID,
+			"order_id":   i + 1,
+		}
+
+		if err := tx.Table("elements").Where("id = ?", item.ID.String()).UpdateColumns(data).Error; err != nil {
+			return err
+		}
+
+		if err := updateElementOrderInTx(tx, item.ID, item.Elements); err != nil {
+			return err
+		}
 	}
 
 	return nil
