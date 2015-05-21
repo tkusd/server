@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/negroni"
 	"github.com/julienschmidt/httprouter"
 	"github.com/phyber/negroni-gzip/gzip"
+	"github.com/rs/cors"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/controller/v1"
 )
@@ -24,7 +25,11 @@ func Router() http.Handler {
 	n.Use(common.NewLogger())
 	n.Use(common.NewRecovery())
 	n.Use(gzip.Gzip(gzip.DefaultCompression))
-	n.Use(common.CSR())
+	// n.Use(common.CSR())
+	n.Use(cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
+		AllowedHeaders: []string{"Origin", "Accept", "Content-Type", "Authorization"},
+	}))
 	n.Use(common.NewSubRoute("/v1", v1.Router()))
 	n.UseHandler(r)
 
