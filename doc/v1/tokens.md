@@ -44,6 +44,12 @@ POST /v1/tokens
 Authorization: Bearer <token>
 ```
 
+## 更新  Token
+
+```
+PUT /v1/tokens/:token_id
+```
+
 ## 刪除 Token
 
 ```

@@ -25,7 +25,7 @@ func (t *Token) Save() error {
 		return db.Create(t).Error
 	}
 
-	return db.Update(t).Error
+	return db.Save(t).Error
 }
 
 // Delete deletes data from the database.
