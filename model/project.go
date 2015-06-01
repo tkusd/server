@@ -1,7 +1,10 @@
 package model
 
 import (
+	"database/sql"
+
 	"github.com/asaskevich/govalidator"
+	"github.com/jinzhu/gorm"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
@@ -15,13 +18,29 @@ type Project struct {
 	CreatedAt   types.Time `json:"created_at"`
 	UpdatedAt   types.Time `json:"updated_at"`
 	IsPrivate   bool       `json:"is_private"`
+
+	// Virtual attributes
+	Owner struct {
+		ID     types.UUID `json:"id"`
+		Name   string     `json:"name"`
+		Avatar string     `json:"avatar"`
+	} `json:"owner,omitempty" sql:"-"`
+}
+
+type ProjectCollection struct {
+	Data    []*Project `json:"data"`
+	HasMore bool       `json:"has_more"`
+	Count   int        `json:"count"`
+	Limit   int        `json:"limit"`
+	Offset  int        `json:"offset"`
 }
 
 // ProjectQueryOption is the query options for projects.
 type ProjectQueryOption struct {
 	QueryOption
-	UserID  *types.UUID
-	Private bool
+	UserID    *types.UUID
+	Private   bool
+	WithOwner bool
 }
 
 // BeforeSave is called when the data is about to be saved.
@@ -69,10 +88,57 @@ func (p *Project) Exists() bool {
 	return exists("projects", p.ID.String())
 }
 
-// GetProjectList gets a list of projects.
-func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
+func generateProjectWithOwnerQuery() *gorm.DB {
+	return db.Table("projects").
+		Joins("JOIN users ON users.id = projects.user_id").
+		Select([]string{
+		"projects.id",
+		"projects.title",
+		"projects.description",
+		"projects.user_id",
+		"projects.created_at",
+		"projects.updated_at",
+		"projects.is_private",
+		"users.id",
+		"users.name",
+		"users.avatar",
+	})
+}
+
+func scanProjectsWithOwner(rows *sql.Rows) ([]*Project, error) {
 	var list []*Project
 
+	defer rows.Close()
+
+	for rows.Next() {
+		project := new(Project)
+
+		err := rows.Scan(
+			&project.ID,
+			&project.Title,
+			&project.Description,
+			&project.UserID,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&project.IsPrivate,
+			&project.Owner.ID,
+			&project.Owner.Name,
+			&project.Owner.Avatar,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, project)
+	}
+
+	return list, nil
+}
+
+// GetProjectList gets a list of projects.
+func GetProjectList(option *ProjectQueryOption) (*ProjectCollection, error) {
+	var count int
 	query := map[string]interface{}{}
 
 	if !option.Private {
@@ -83,19 +149,45 @@ func GetProjectList(option *ProjectQueryOption) ([]*Project, error) {
 		query["user_id"] = option.UserID.String()
 	}
 
-	if option.Limit == 0 {
+	if option.Limit == 0 || option.Limit > maxLimit {
 		option.Limit = defaultLimit
 	}
 
 	if option.Order == "" {
-		option.Order = "created_at desc"
+		option.Order = "-created_at"
 	}
 
-	if err := db.Where(query).Order(option.Order).Offset(option.Offset).Limit(option.Limit).Find(&list).Error; err != nil {
+	order := option.ParseOrder()
+
+	// Get count
+	if err := db.Table("projects").Where(query).Count(&count).Error; err != nil {
 		return nil, err
 	}
 
-	return list, nil
+	rows, err := generateProjectWithOwnerQuery().
+		Where(query).
+		Order(order).
+		Offset(option.Offset).
+		Limit(option.Limit).
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+
+	projects, err := scanProjectsWithOwner(rows)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProjectCollection{
+		Data:    projects,
+		Limit:   option.Limit,
+		Offset:  option.Offset,
+		Count:   count,
+		HasMore: count > option.Offset+option.Limit,
+	}, nil
 }
 
 // GetProject gets the project data.
@@ -107,4 +199,28 @@ func GetProject(id types.UUID) (*Project, error) {
 	}
 
 	return project, nil
+}
+
+// GetProjectWithOwner gets the project with owner data.
+func GetProjectWithOwner(id types.UUID) (*Project, error) {
+	rows, err := generateProjectWithOwnerQuery().
+		Where("projects.id = ?", id.String()).
+		Limit(1).
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+
+	projects, err := scanProjectsWithOwner(rows)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(projects) == 0 {
+		return nil, nil
+	}
+
+	return projects[0], nil
 }

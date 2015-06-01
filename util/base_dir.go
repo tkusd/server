@@ -4,7 +4,7 @@ import "os"
 
 var (
 	osWd, _ = os.Getwd()
-	baseDir = os.Getenv("CWD")
+	baseDir = os.Getenv("GO_CWD")
 )
 
 // GetBaseDir returns the path of project directory

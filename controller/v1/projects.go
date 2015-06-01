@@ -2,6 +2,7 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
@@ -19,6 +20,22 @@ func ProjectList(res http.ResponseWriter, req *http.Request) error {
 
 	option := &model.ProjectQueryOption{
 		UserID: userID,
+	}
+
+	if limit := req.URL.Query().Get("limit"); limit != "" {
+		if i, err := strconv.Atoi(limit); err == nil {
+			option.Limit = i
+		}
+	}
+
+	if offset := req.URL.Query().Get("offset"); offset != "" {
+		if i, err := strconv.Atoi(offset); err == nil {
+			option.Offset = i
+		}
+	}
+
+	if order := req.URL.Query().Get("order"); order != "" {
+		option.Order = order
 	}
 
 	if err := CheckUserPermission(res, req, *userID); err == nil {
@@ -95,26 +112,38 @@ func ProjectCreate(res http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
-// ProjectShow handles GET /projects/:project_id.
-func ProjectShow(res http.ResponseWriter, req *http.Request) error {
-	project, err := GetProject(res, req)
+func getProjectWithOwner(res http.ResponseWriter, req *http.Request) (*model.Project, error) {
+	id, err := GetIDParam(req, projectIDParam)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	token, err := GetToken(res, req)
+	project, err := model.GetProjectWithOwner(*id)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	token, _ := CheckToken(res, req)
 
 	if project.IsPrivate && !project.UserID.Equal(token.UserID) {
-		return &util.APIError{
+		return nil, &util.APIError{
 			Code:    util.UserForbiddenError,
 			Message: "You are forbidden to access this project.",
 			Status:  http.StatusForbidden,
 		}
+	}
+
+	return project, nil
+}
+
+// ProjectShow handles GET /projects/:project_id.
+func ProjectShow(res http.ResponseWriter, req *http.Request) error {
+	project, err := getProjectWithOwner(res, req)
+
+	if err != nil {
+		return err
 	}
 
 	common.APIResponse(res, req, http.StatusOK, project)
@@ -174,5 +203,30 @@ func ProjectDestroy(res http.ResponseWriter, req *http.Request) error {
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
+func ProjectFull(res http.ResponseWriter, req *http.Request) error {
+	project, err := getProjectWithOwner(res, req)
+
+	if err != nil {
+		return err
+	}
+
+	elements, err := model.GetElementList(&model.ElementQueryOption{
+		ProjectID: &project.ID,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	common.APIResponse(res, req, http.StatusOK, struct {
+		*model.Project
+		Elements []*model.Element `json:"elements"`
+	}{
+		Project:  project,
+		Elements: elements,
+	})
 	return nil
 }

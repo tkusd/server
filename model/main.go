@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"log"
+	"strings"
 
 	"path/filepath"
 
@@ -16,6 +17,7 @@ import (
 const (
 	databaseDir  = "db"
 	defaultLimit = 30
+	maxLimit     = 100
 )
 
 var db gorm.DB
@@ -25,6 +27,23 @@ type QueryOption struct {
 	Offset int
 	Limit  int
 	Order  string
+}
+
+func (q *QueryOption) ParseOrder() string {
+	var arr []string
+	split := strings.Split(q.Order, ",")
+
+	for _, str := range split {
+		s := strings.TrimSpace(str)
+
+		if s[0] == '-' {
+			arr = append(arr, string(s[1:]), "desc")
+		} else {
+			arr = append(arr, s)
+		}
+	}
+
+	return strings.Join(arr, " ")
 }
 
 func init() {

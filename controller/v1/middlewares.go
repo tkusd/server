@@ -35,8 +35,26 @@ func GetIDParam(req *http.Request, param string) (*types.UUID, error) {
 	return &uid, nil
 }
 
-// GetToken checks the Authorization header and gets the token from the database.
 func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) {
+	id, err := GetIDParam(req, tokenIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if token, err := model.GetToken(*id); err == nil {
+		return token, nil
+	}
+
+	return nil, &util.APIError{
+		Code:    util.TokenNotFoundError,
+		Message: "Token not found.",
+		Status:  http.StatusNotFound,
+	}
+}
+
+// CheckToken checks the Authorization header and gets the token from the database.
+func CheckToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) {
 	authHeader := req.Header.Get("Authorization")
 
 	if authHeader == "" || !rToken.MatchString(authHeader) {
@@ -47,8 +65,9 @@ func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) 
 		}
 	}
 
-	key := rToken.FindStringSubmatch(authHeader)[1]
-	token, err := model.GetTokenBase64(key)
+	//key := rToken.FindStringSubmatch(authHeader)[1]
+	id := rToken.FindStringSubmatch(authHeader)[1]
+	token, err := model.GetToken(types.ParseUUID(id))
 
 	if err != nil {
 		return nil, &util.APIError{
@@ -82,7 +101,7 @@ func GetUser(res http.ResponseWriter, req *http.Request) (*model.User, error) {
 
 // CheckUserPermission checks whether the current token matching user ID.
 func CheckUserPermission(res http.ResponseWriter, req *http.Request, userID types.UUID) error {
-	token, err := GetToken(res, req)
+	token, err := CheckToken(res, req)
 
 	if err != nil {
 		return err
@@ -185,7 +204,7 @@ func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, err
 
 // CheckProjectPermission checks whether the current user is able to edit the project.
 func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectID types.UUID, strict bool) error {
-	token, err := GetToken(res, req)
+	token, err := CheckToken(res, req)
 
 	if err != nil {
 		return err

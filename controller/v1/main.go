@@ -13,7 +13,7 @@ const (
 	userIDParam    = "user_id"
 	projectIDParam = "project_id"
 	elementIDParam = "element_id"
-	keyParam       = "key"
+	tokenIDParam   = "token_id"
 )
 
 // URL patterns
@@ -22,11 +22,12 @@ const (
 	userSingularURL           = "/users/:" + userIDParam
 	projectCollectionURL      = userSingularURL + "/projects"
 	projectSingularURL        = "/projects/:" + projectIDParam
+	projectFullURL            = projectSingularURL + "/full"
 	elementCollectionURL      = projectSingularURL + "/elements"
 	elementSingularURL        = "/elements/:" + elementIDParam
 	childElementCollectionURL = elementSingularURL + "/elements"
 	tokenCollectionURL        = "/tokens"
-	tokenSingularURL          = "/tokens/:" + keyParam
+	tokenSingularURL          = "/tokens/:" + tokenIDParam
 )
 
 // Router returns a http.Handler.
@@ -41,9 +42,10 @@ func Router() http.Handler {
 
 	r.GET(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectList))
 	r.POST(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectCreate))
-	r.GET(projectSingularURL, common.WrapCommonHandle(ProjectShow))
+	r.GET(projectSingularURL, common.ChainHandler(CheckProjectExist, ProjectShow))
 	r.PUT(projectSingularURL, common.WrapCommonHandle(ProjectUpdate))
 	r.DELETE(projectSingularURL, common.WrapCommonHandle(ProjectDestroy))
+	r.GET(projectFullURL, common.ChainHandler(CheckProjectExist, ProjectFull))
 
 	r.GET(elementCollectionURL, common.ChainHandler(CheckProjectExist, ElementList))
 	r.POST(elementCollectionURL, common.WrapCommonHandle(ElementCreate))

@@ -16,7 +16,7 @@ import (
 	"github.com/tkusd/server/util"
 )
 
-func TestGetToken(t *testing.T) {
+func TestCheckToken(t *testing.T) {
 	Convey("Success", t, func() {
 		user := new(model.User)
 		createTestUser(user, fixtureUsers[0])
@@ -30,7 +30,7 @@ func TestGetToken(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "Bearer "+token.ID.String())
 
-		t, _ := GetToken(res, req)
+		t, _ := CheckToken(res, req)
 		So(t.ID, ShouldResemble, token.ID)
 		So(t.UserID, ShouldResemble, token.UserID)
 	})
@@ -41,7 +41,7 @@ func TestGetToken(t *testing.T) {
 		fakeKey := base64.StdEncoding.EncodeToString(uuid.NewRandom())
 		req.Header.Set("Authorization", "Bearer "+fakeKey)
 
-		_, err := GetToken(res, req)
+		_, err := CheckToken(res, req)
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.TokenInvalidError,
 			Message: "Token is invalid.",
@@ -54,7 +54,7 @@ func TestGetToken(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", uuid.New())
 
-		_, err := GetToken(res, req)
+		_, err := CheckToken(res, req)
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.TokenRequiredError,
 			Message: "Token is required.",
@@ -66,7 +66,7 @@ func TestGetToken(t *testing.T) {
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 
-		_, err := GetToken(res, req)
+		_, err := CheckToken(res, req)
 		So(err, ShouldResemble, &util.APIError{
 			Code:    util.TokenRequiredError,
 			Message: "Token is required.",

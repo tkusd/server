@@ -1,15 +1,13 @@
 package model
 
-import (
-	"code.google.com/p/go-uuid/uuid"
-	"github.com/tkusd/server/model/types"
-)
+import "github.com/tkusd/server/model/types"
 
 // Token represents the data structure of a token.
 type Token struct {
-	ID        types.Base64Hash `json:"id"`
-	UserID    types.UUID       `json:"user_id"`
-	CreatedAt types.Time       `json:"created_at"`
+	ID        types.UUID `json:"id"`
+	UserID    types.UUID `json:"user_id"`
+	CreatedAt types.Time `json:"created_at"`
+	UpdatedAt types.Time `json:"updated_at"`
 }
 
 // BeforeCreate is called when the data is about to be created.
@@ -18,13 +16,13 @@ func (t *Token) BeforeCreate() error {
 	return nil
 }
 
+func (t *Token) BeforeSave() error {
+	t.UpdatedAt = types.Now()
+	return nil
+}
+
 // Save creates or updates data in the database.
 func (t *Token) Save() error {
-	if t.ID.IsEmpty() {
-		t.ID = types.Base64Hash{types.SHA256(t.UserID.String(), t.CreatedAt.String(), uuid.New())}
-		return db.Create(t).Error
-	}
-
 	return db.Save(t).Error
 }
 
@@ -34,23 +32,12 @@ func (t *Token) Delete() error {
 }
 
 // GetToken returns the token data.
-func GetToken(id types.Base64Hash) (*Token, error) {
+func GetToken(id types.UUID) (*Token, error) {
 	token := new(Token)
 
-	if err := db.Where("id = ?", id.HexString()).First(token).Error; err != nil {
+	if err := db.Where("id = ?", id.String()).First(token).Error; err != nil {
 		return nil, err
 	}
 
 	return token, nil
-}
-
-// GetTokenBase64 searchs token data by Base64 ID.
-func GetTokenBase64(key string) (*Token, error) {
-	hash, err := types.DecodeBase64(key)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return GetToken(*hash)
 }

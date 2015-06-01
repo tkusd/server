@@ -12,7 +12,7 @@ build:
         name: Set environment variables
         code: |
           export GO_ENV=wercker
-          export CWD=$WERCKER_SOURCE_DIR
+          export GO_CWD=$WERCKER_SOURCE_DIR
 
     - script:
         name: go get

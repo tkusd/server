@@ -74,15 +74,10 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) error {
 
 // TokenUpdate handles PUT /tokens/:key.
 func TokenUpdate(res http.ResponseWriter, req *http.Request) error {
-	key := common.GetParam(req, keyParam)
-	token, err := model.GetTokenBase64(key)
+	token, err := GetToken(res, req)
 
 	if err != nil {
-		return &util.APIError{
-			Code:    util.TokenNotFoundError,
-			Message: "Token does not exist.",
-			Status:  http.StatusNotFound,
-		}
+		return err
 	}
 
 	if err := token.Save(); err != nil {
@@ -97,15 +92,10 @@ func TokenUpdate(res http.ResponseWriter, req *http.Request) error {
 
 // TokenDestroy handles DELETE /tokens/:key.
 func TokenDestroy(res http.ResponseWriter, req *http.Request) error {
-	key := common.GetParam(req, keyParam)
-	token, err := model.GetTokenBase64(key)
+	token, err := GetToken(res, req)
 
 	if err != nil {
-		return &util.APIError{
-			Code:    util.TokenNotFoundError,
-			Message: "Token does not exist.",
-			Status:  http.StatusNotFound,
-		}
+		return err
 	}
 
 	if err := token.Delete(); err != nil {
