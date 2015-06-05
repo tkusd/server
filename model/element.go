@@ -116,7 +116,7 @@ func GetElement(id types.UUID) (*Element, error) {
 
 // GetElementList gets a list of elements.
 func GetElementList(option *ElementQueryOption) ([]*Element, error) {
-	list := make([]*Element, 0)
+	var list []*Element
 	var id string
 	var elementID types.UUID
 	var columns []string
@@ -162,17 +162,25 @@ SELECT * FROM tree ORDER BY depth, order_id;`
 		return list, nil
 	}
 
+	if list == nil {
+		list = make([]*Element, 0)
+	}
+
 	return buildElementTree(list, elementID), nil
 }
 
 func buildElementTree(list []*Element, parentID types.UUID) []*Element {
-	result := make([]*Element, 0)
+	var result []*Element
 
 	for i, item := range list {
 		if parentID.Equal(item.ElementID) {
 			result = append(result, item)
 			item.Elements = buildElementTree(list[i:], item.ID)
 		}
+	}
+
+	if result == nil {
+		result = make([]*Element, 0)
 	}
 
 	return result

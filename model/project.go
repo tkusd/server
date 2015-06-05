@@ -181,6 +181,10 @@ func GetProjectList(option *ProjectQueryOption) (*ProjectCollection, error) {
 		return nil, err
 	}
 
+	if projects == nil {
+		projects = make([]*Project, 0)
+	}
+
 	return &ProjectCollection{
 		Data:    projects,
 		Limit:   option.Limit,
