@@ -29,6 +29,14 @@ func (uid UUID) Value() (driver.Value, error) {
 	return uid.UUID.String(), nil
 }
 
+func (uid UUID) MarshalJSON() ([]byte, error) {
+	if !uid.Valid() {
+		return []byte("null"), nil
+	}
+
+	return []byte(`"` + uid.String() + `"`), nil
+}
+
 // Equal checks the equality of two UUIDs.
 func (uid UUID) Equal(a UUID) bool {
 	return uuid.Equal(uid.UUID, a.UUID)
