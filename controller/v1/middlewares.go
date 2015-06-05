@@ -191,7 +191,7 @@ func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, err
 		return nil, err
 	}
 
-	if element, err := model.GetElement(*id); err != nil {
+	if element, err := model.GetElement(*id); err == nil {
 		return element, nil
 	}
 
@@ -206,16 +206,18 @@ func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, err
 func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectID types.UUID, strict bool) error {
 	token, err := CheckToken(res, req)
 
-	if err != nil {
+	if strict && err != nil {
 		return err
 	}
 
 	project, err := model.GetProject(projectID)
 
-	if err == nil {
-		if project.UserID.Equal(token.UserID) || (!strict && !project.IsPrivate) {
-			return nil
-		}
+	if err != nil {
+		return nil
+	}
+
+	if (token != nil && project.UserID.Equal(token.UserID)) || (!strict && !project.IsPrivate) {
+		return nil
 	}
 
 	return &util.APIError{
