@@ -36,6 +36,8 @@ func ProjectList(res http.ResponseWriter, req *http.Request) error {
 
 	if order := req.URL.Query().Get("order"); order != "" {
 		option.Order = order
+	} else {
+		option.Order = "-created_at"
 	}
 
 	if err := CheckUserPermission(res, req, *userID); err == nil {
