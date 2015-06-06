@@ -24,7 +24,7 @@ POST /v1/tokens
 
 ``` js
 {
-  "id": "2o-j6R88UfFHQuHqiRA8rZQZDnc_-9SlJF3RICNxFag=",
+  "id": "9354bbb1-2cfd-4808-8a73-e3b03f432cf9",
   "user_id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
   "created_at": "2015-05-08T05:08:06Z"
 }
@@ -32,7 +32,7 @@ POST /v1/tokens
 
 名稱 | 型別 | 說明
 --- | --- | ---
-`id` | hash | ID
+`id` | uuid | ID
 `user_id` | uuid | 使用者 ID
 `created_at` | date | 建立日期
 

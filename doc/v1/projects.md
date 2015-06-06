@@ -60,6 +60,7 @@ GET /v1/projects/:project_id
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `is_private` | boolean | 是否為私人專案
+`owner` | object | 擁有者
 
 ## 更新專案
 
