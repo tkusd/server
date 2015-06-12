@@ -114,6 +114,10 @@ func GetElement(id types.UUID) (*Element, error) {
 	return e, nil
 }
 
+func appendIfMissing(arr []string, key ...string) []string {
+	return arr
+}
+
 // GetElementList gets a list of elements.
 func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 	var list []*Element
@@ -124,18 +128,12 @@ func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 	if len(option.Select) == 0 {
 		option.Select = []string{"*"}
 	} else {
-		containOrderID := false
+		// TODO: Add missing fields
+		//option.Select = appendIfMissing(option.Select, "id", "project_id", "element_id", "order_id")
+	}
 
-		for _, col := range option.Select {
-			if col == "order_id" {
-				containOrderID = true
-			}
-			columns = append(columns, "elements."+col)
-		}
-
-		if !containOrderID {
-			columns = append(columns, "elements.order_id")
-		}
+	for _, col := range option.Select {
+		columns = append(columns, "elements."+col)
 	}
 
 	selectColumns := strings.Join(columns, ",")

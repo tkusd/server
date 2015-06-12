@@ -26,10 +26,11 @@ func parseElementListQueryOption(req *http.Request) *model.ElementQueryOption {
 		}
 	}
 
-	/* This feature is disabled temporarily since I can't control the returned fields.
-	if sel := query.Get("select"); sel != "" {
-		option.Select = util.SplitAndTrim(sel, ",")
-	}*/
+	// This feature is disabled temporarily since I can't control the returned fields.
+	/*
+		if sel := query.Get("select"); sel != "" {
+			option.Select = util.SplitAndTrim(sel, ",")
+		}*/
 
 	return &option
 }
