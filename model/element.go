@@ -123,10 +123,19 @@ func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 
 	if len(option.Select) == 0 {
 		option.Select = []string{"*"}
-	}
+	} else {
+		containOrderID := false
 
-	for _, col := range option.Select {
-		columns = append(columns, "elements."+col)
+		for _, col := range option.Select {
+			if col == "order_id" {
+				containOrderID = true
+			}
+			columns = append(columns, "elements."+col)
+		}
+
+		if !containOrderID {
+			columns = append(columns, "elements.order_id")
+		}
 	}
 
 	selectColumns := strings.Join(columns, ",")

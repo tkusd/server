@@ -31,11 +31,9 @@ type QueryOption struct {
 
 func (q *QueryOption) ParseOrder() string {
 	var arr []string
-	split := strings.Split(q.Order, ",")
+	split := util.SplitAndTrim(q.Order, ",")
 
-	for _, str := range split {
-		s := strings.TrimSpace(str)
-
+	for _, s := range split {
 		if s[0] == '-' {
 			arr = append(arr, string(s[1:]), "desc")
 		} else {

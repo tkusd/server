@@ -2,12 +2,37 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
 	"github.com/tkusd/server/model/types"
 )
+
+func parseElementListQueryOption(req *http.Request) *model.ElementQueryOption {
+	var option model.ElementQueryOption
+	query := req.URL.Query()
+
+	if flat, ok := query["flat"]; ok {
+		if len(flat) == 0 || (flat[0] != "false" && flat[0] != "0") {
+			option.Flat = true
+		}
+	}
+
+	if depth := query.Get("depth"); depth != "" {
+		if i, err := strconv.Atoi(depth); err == nil {
+			option.Depth = uint(i)
+		}
+	}
+
+	/* This feature is disabled temporarily since I can't control the returned fields.
+	if sel := query.Get("select"); sel != "" {
+		option.Select = util.SplitAndTrim(sel, ",")
+	}*/
+
+	return &option
+}
 
 // ElementList handles GET /projects/:project_id/elements.
 func ElementList(res http.ResponseWriter, req *http.Request) error {
@@ -17,9 +42,8 @@ func ElementList(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	option := &model.ElementQueryOption{
-		ProjectID: projectID,
-	}
+	option := parseElementListQueryOption(req)
+	option.ProjectID = projectID
 
 	if err := CheckProjectPermission(res, req, *projectID, false); err != nil {
 		return err
@@ -37,9 +61,8 @@ func ElementList(res http.ResponseWriter, req *http.Request) error {
 
 func ChildElementList(res http.ResponseWriter, req *http.Request) error {
 	element, err := GetElement(res, req)
-	option := &model.ElementQueryOption{
-		ElementID: &element.ID,
-	}
+	option := parseElementListQueryOption(req)
+	option.ElementID = &element.ID
 
 	if err != nil {
 		return err

@@ -107,6 +107,17 @@ GET /v1/projects/:project_id/elements
 GET /v1/elements/:element_id/elements
 ```
 
+### Request
+
+```
+/v1/projects/:project_id/elements?flat&depth=1
+```
+
+參數 | 型別 | 說明 | 預設值
+--- | --- | --- | ---
+`flat` | boolean | 回傳的元素列表不以階層排列 | false
+`depth` | int | 列表的最大深度，0 代表不限制 | 0
+
 ## 可用的元素類型
 
 - screen

@@ -18,23 +18,24 @@ func ProjectList(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
+	query := req.URL.Query()
 	option := &model.ProjectQueryOption{
 		UserID: userID,
 	}
 
-	if limit := req.URL.Query().Get("limit"); limit != "" {
+	if limit := query.Get("limit"); limit != "" {
 		if i, err := strconv.Atoi(limit); err == nil {
 			option.Limit = i
 		}
 	}
 
-	if offset := req.URL.Query().Get("offset"); offset != "" {
+	if offset := query.Get("offset"); offset != "" {
 		if i, err := strconv.Atoi(offset); err == nil {
 			option.Offset = i
 		}
 	}
 
-	if order := req.URL.Query().Get("order"); order != "" {
+	if order := query.Get("order"); order != "" {
 		option.Order = order
 	} else {
 		option.Order = "-created_at"
