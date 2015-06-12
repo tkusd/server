@@ -62,6 +62,14 @@ GET /v1/projects/:project_id
 `is_private` | boolean | 是否為私人專案
 `owner` | object | 擁有者
 
+## 取得專案及所有元素
+
+```
+GET /v1/projects/:project_id/full
+```
+
+可用參數請參考：[取得元素列表](elements.md#取得元素列表)
+
 ## 更新專案
 
 ```

@@ -216,9 +216,10 @@ func ProjectFull(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	elements, err := model.GetElementList(&model.ElementQueryOption{
-		ProjectID: &project.ID,
-	})
+	option := parseElementListQueryOption(req)
+	option.ProjectID = &project.ID
+
+	elements, err := model.GetElementList(option)
 
 	if err != nil {
 		return err
