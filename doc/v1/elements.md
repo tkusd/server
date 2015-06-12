@@ -12,7 +12,7 @@ POST /v1/elements/:element_id/elements
 參數 | 型別 | 說明 | 預設值
 --- | --- | --- | ---
 `name` | string | 名稱 | 
-`type` | string | 類別 | **必填**
+`type` | string | 類型（見下方） | **必填**
 `attributes` | object | 屬性
 
 ### Response
@@ -23,7 +23,7 @@ POST /v1/elements/:element_id/elements
 `project_id` | uuid | 專案 ID
 `element_id` | uuid | 母元素 ID
 `name` | string | 名稱
-`type` | string | 類別
+`type` | string | 類型（見下方）
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
@@ -42,7 +42,7 @@ GET /v1/elements/:element_id
 `project_id` | uuid | 專案 ID
 `element_id` | uuid | 母元素 ID
 `name` | string | 名稱
-`type` | string | 類別
+`type` | string | 類型（見下方）
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
@@ -58,7 +58,7 @@ PUT /v1/elements/:element_id
 參數 | 型別 | 說明
 --- | --- | ---
 `name` | string | 名稱
-`type` | string | 類別
+`type` | string | 類型（見下方）
 `attributes` | object | 屬性
 `elements` | []uuid | 子元素
 
@@ -89,7 +89,7 @@ PUT /v1/elements/:element_id
 `project_id` | uuid | 專案 ID
 `element_id` | uuid | 母元素 ID
 `name` | string | 名稱
-`type` | string | 類別
+`type` | string | 類型（見下方）
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
@@ -106,3 +106,14 @@ DELETE /v1/elements/:element_id
 GET /v1/projects/:project_id/elements
 GET /v1/elements/:element_id/elements
 ```
+
+## 可用的元素類型
+
+- screen
+- text
+- layout
+- button
+- input
+- link
+- image
+- list

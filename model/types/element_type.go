@@ -9,23 +9,49 @@ type ElementType int16
 const (
 	ElementTypeScreen ElementType = iota + 1
 	ElementTypeText
+	ElementTypeLayout
+	ElementTypeButton
+	ElementTypeInput
+	ElementTypeLink
+	ElementTypeImage
+	ElementTypeList
 )
 
-// Element types in string
-const (
-	elementTypeStringScreen = "screen"
-	elementTypeStringText   = "text"
-)
+var elementTypeMap = map[ElementType]string{
+	ElementTypeScreen: "screen",
+	ElementTypeText:   "text",
+	ElementTypeLayout: "layout",
+	ElementTypeButton: "button",
+	ElementTypeInput:  "input",
+	ElementTypeLink:   "link",
+	ElementTypeImage:  "image",
+	ElementTypeList:   "list",
+}
+
+var elementTypeReversedMap map[string]ElementType
+
+func init() {
+	elementTypeReversedMap = make(map[string]ElementType)
+
+	for key, value := range elementTypeMap {
+		elementTypeReversedMap[value] = key
+	}
+}
 
 func (t ElementType) String() string {
-	switch t {
-	case ElementTypeScreen:
-		return elementTypeStringScreen
-
-	case ElementTypeText:
-		return elementTypeStringText
+	if value, ok := elementTypeMap[t]; ok {
+		return value
 	}
+
 	return ""
+}
+
+func findElementTypeFromText(str string) ElementType {
+	if value, ok := elementTypeReversedMap[str]; ok {
+		return value
+	}
+
+	return 0
 }
 
 // MarshalJSON implements json.Marshaler interface.
@@ -53,16 +79,4 @@ func (t *ElementType) UnmarshalJSON(data []byte) error {
 // UnmarshalText implements encoding.TextUnmarshaler interface.
 func (t *ElementType) UnmarshalText(data []byte) error {
 	return t.UnmarshalJSON(data)
-}
-
-func findElementTypeFromText(str string) ElementType {
-	switch str {
-	case elementTypeStringScreen:
-		return ElementTypeScreen
-
-	case elementTypeStringText:
-		return ElementTypeText
-	}
-
-	return 0
 }
