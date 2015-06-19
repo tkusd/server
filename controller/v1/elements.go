@@ -87,6 +87,7 @@ type elementForm struct {
 	Name       *string                  `json:"name"`
 	Type       *types.ElementType       `json:"type"`
 	Attributes *types.JSONObject        `json:"attributes"`
+	Styles     *types.JSONObject        `json:"styles"`
 	Elements   *[]model.ElementTreeItem `json:"elements"`
 }
 
@@ -95,6 +96,7 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Name:       "name",
 		&form.Type:       "type",
 		&form.Attributes: "attributes",
+		&form.Styles:     "styles",
 		&form.Elements:   "elements",
 	}
 }
@@ -110,6 +112,10 @@ func saveElement(form *elementForm, element *model.Element) error {
 
 	if form.Attributes != nil {
 		element.Attributes = *form.Attributes
+	}
+
+	if form.Styles != nil {
+		element.Styles = *form.Styles
 	}
 
 	return element.Save()

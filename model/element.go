@@ -23,6 +23,7 @@ type Element struct {
 	CreatedAt  types.Time        `json:"created_at"`
 	UpdatedAt  types.Time        `json:"updated_at"`
 	Attributes types.JSONObject  `json:"attributes"`
+	Styles     types.JSONObject  `json:"styles"`
 
 	// Virtual attributes
 	Elements []*Element `json:"elements,omitempty" sql:"-"`
