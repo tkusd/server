@@ -166,12 +166,12 @@ SELECT * FROM tree ORDER BY depth, order_id;`
 		return nil, err
 	}
 
-	if option.Flat {
-		return list, nil
-	}
-
 	if list == nil {
 		list = make([]*Element, 0)
+	}
+
+	if option.Flat {
+		return list, nil
 	}
 
 	return buildElementTree(list, elementID), nil
