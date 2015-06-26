@@ -12,7 +12,8 @@ POST /v1/users
 {
   "name": "abc",
   "email": "abc@example.com",
-  "password": "123456"
+  "password": "123456",
+  "language": "en"
 }
 ```
 
@@ -21,6 +22,7 @@ POST /v1/users
 `name` | string | 姓名。最大長度 100。 | **必填**
 `email` | string | Email | **必填**
 `password` | string | 密碼。長度為 6~50。 | **必填**
+`language` | string | 語言。使用 [IETF 語言標籤]，最大長度 35。 | `en`
 
 ### Response
 
@@ -32,7 +34,8 @@ POST /v1/users
   "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
   "created_at": "2015-05-08T05:04:35Z",
   "updated_at": "2015-05-08T05:04:35Z",
-  "is_activated": false
+  "is_activated": false,
+  "language": "en"
 }
 ```
 
@@ -45,6 +48,7 @@ POST /v1/users
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `is_activated` | boolean | 使用者是否已啟動
+`language` | string | 語言
 
 ## 取得使用者
 
@@ -64,7 +68,8 @@ GET /v1/users/:user_id
   "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
   "created_at": "2015-05-08T05:04:35Z",
   "updated_at": "2015-05-08T05:04:35Z",
-  "is_activated": false
+  "is_activated": false,
+  "language": "en"
 }
 ```
 
@@ -76,7 +81,8 @@ GET /v1/users/:user_id
   "created_at": "2015-05-08T05:04:35Z",
   "id": "cfb4955e-ebdf-4e5b-88f3-6f919dd58907",
   "name": "abc",
-  "updated_at": "2015-05-08T05:04:35Z"
+  "updated_at": "2015-05-08T05:04:35Z",
+  "language": "en"
 }
 ```
 
@@ -89,6 +95,7 @@ GET /v1/users/:user_id
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `is_activated` | boolean | 使用者是否已啟動（僅向本人顯示）
+`language` | string | 語言
 
 ## 更新使用者
 
@@ -103,7 +110,8 @@ PUT /v1/users/:user_id
   "name": "abc",
   "email": "abc@example.com",
   "password": "234567",
-  "old_password": "123456"
+  "old_password": "123456",
+  "language": "en"
 }
 ```
 
@@ -113,6 +121,7 @@ PUT /v1/users/:user_id
 `email` | string | Email
 `password` | string | 新密碼。長度為 6~50。
 `old_password` | string | 目前密碼。如果要更改密碼的話必填。
+`language` | string | 語言。使用 [IETF 語言標籤]，最大長度 35。 | `en`
 
 ### Response
 
@@ -124,7 +133,8 @@ PUT /v1/users/:user_id
   "avatar": "https://www.gravatar.com/avatar/b28d5fe8da784e36235a487c03a47353",
   "created_at": "2015-05-08T05:04:35Z",
   "updated_at": "2015-05-08T05:04:35Z",
-  "is_activated": false
+  "is_activated": false,
+  "language": "en"
 }
 ```
 
@@ -137,9 +147,12 @@ PUT /v1/users/:user_id
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `is_activated` | boolean | 使用者是否已啟動
+`language` | string | 語言
 
 ## 刪除使用者
 
 ```
 DELETE /v1/users/:user_id
 ```
+
+[IETF 語言標籤]: https://en.wikipedia.org/wiki/IETF_language_tag

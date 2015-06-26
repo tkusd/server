@@ -22,6 +22,7 @@ type User struct {
 	UpdatedAt       types.Time       `json:"updated_at"`
 	IsActivated     bool             `json:"is_activated"`
 	ActivationToken types.Base64Hash `json:"-"`
+	Language        string           `json:"language"`
 }
 
 // PublicProfile returns the data for public display.
@@ -32,6 +33,7 @@ func (u *User) PublicProfile() map[string]interface{} {
 		"avatar":     u.Avatar,
 		"created_at": u.CreatedAt,
 		"updated_at": u.UpdatedAt,
+		"language":   u.Language,
 	}
 }
 
@@ -52,6 +54,7 @@ func (u *User) Save() error {
 	u.Name = govalidator.Trim(u.Name, "")
 	u.Email = govalidator.Trim(u.Email, "")
 	u.Avatar = govalidator.Trim(u.Avatar, "")
+	u.Language = govalidator.Trim(u.Language, "")
 
 	if u.Name == "" {
 		return &util.APIError{
@@ -87,6 +90,18 @@ func (u *User) Save() error {
 
 	if u.Avatar == "" {
 		u.Avatar = util.Gravatar(u.Email)
+	}
+
+	if u.Language == "" {
+		u.Language = "en"
+	}
+
+	if len(u.Language) > 35 {
+		return &util.APIError{
+			Field:   "language",
+			Code:    util.LengthError,
+			Message: "Maximum length of language is 35.",
+		}
 	}
 
 	if err := db.Save(u).Error; err != nil {
