@@ -11,13 +11,14 @@ import (
 
 // Project represents the data structure of a project.
 type Project struct {
-	ID          types.UUID `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	UserID      types.UUID `json:"user_id"`
-	CreatedAt   types.Time `json:"created_at"`
-	UpdatedAt   types.Time `json:"updated_at"`
-	IsPrivate   bool       `json:"is_private"`
+	ID          types.UUID  `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	UserID      types.UUID  `json:"user_id"`
+	CreatedAt   types.Time  `json:"created_at"`
+	UpdatedAt   types.Time  `json:"updated_at"`
+	IsPrivate   bool        `json:"is_private"`
+	MainScreen  *types.UUID `json:"main_screen"`
 
 	// Virtual attributes
 	Owner struct {
@@ -46,6 +47,19 @@ type ProjectQueryOption struct {
 // BeforeSave is called when the data is about to be saved.
 func (p *Project) BeforeSave() error {
 	p.UpdatedAt = types.Now()
+
+	if p.MainScreen != nil {
+		screen := Element{ID: *p.MainScreen}
+
+		if !screen.Exists() {
+			return &util.APIError{
+				Field:   "main_screen",
+				Code:    util.ElementNotFoundError,
+				Message: "Element not found.",
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -75,7 +89,21 @@ func (p *Project) Save() error {
 		}
 	}
 
-	return db.Save(p).Error
+	if err := db.Save(p).Error; err != nil {
+		return err
+	}
+
+	var user User
+
+	if err := db.Where("id = ?", p.UserID.String()).Select([]string{"id", "name", "avatar"}).First(&user).Error; err != nil {
+		return err
+	}
+
+	p.Owner.ID = user.ID
+	p.Owner.Name = user.Name
+	p.Owner.Avatar = user.Avatar
+
+	return nil
 }
 
 // Delete deletes data from the database.
@@ -99,6 +127,7 @@ func generateProjectWithOwnerQuery() *gorm.DB {
 		"projects.created_at",
 		"projects.updated_at",
 		"projects.is_private",
+		"projects.main_screen",
 		"users.id",
 		"users.name",
 		"users.avatar",
@@ -121,6 +150,7 @@ func scanProjectsWithOwner(rows *sql.Rows) ([]*Project, error) {
 			&project.CreatedAt,
 			&project.UpdatedAt,
 			&project.IsPrivate,
+			&project.MainScreen,
 			&project.Owner.ID,
 			&project.Owner.Name,
 			&project.Owner.Avatar,

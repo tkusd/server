@@ -7,6 +7,7 @@ import (
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
+	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
 
@@ -60,6 +61,7 @@ type projectForm struct {
 	Description *string                  `json:"description"`
 	IsPrivate   *bool                    `json:"is_private"`
 	Elements    *[]model.ElementTreeItem `json:"elements"`
+	MainScreen  *types.UUID              `json:"main_screen"`
 }
 
 func (form *projectForm) FieldMap() binding.FieldMap {
@@ -68,6 +70,7 @@ func (form *projectForm) FieldMap() binding.FieldMap {
 		&form.Description: "description",
 		&form.IsPrivate:   "is_private",
 		&form.Elements:    "elements",
+		&form.MainScreen:  "main_screen",
 	}
 }
 
@@ -173,6 +176,10 @@ func ProjectUpdate(res http.ResponseWriter, req *http.Request) error {
 
 	if err := saveProject(form, project); err != nil {
 		return err
+	}
+
+	if form.MainScreen != nil {
+		project.MainScreen = form.MainScreen
 	}
 
 	if form.Elements != nil {

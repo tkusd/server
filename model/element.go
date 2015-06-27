@@ -16,7 +16,7 @@ import (
 type Element struct {
 	ID         types.UUID        `json:"id"`
 	ProjectID  types.UUID        `json:"project_id"`
-	ElementID  types.UUID        `json:"element_id"`
+	ElementID  *types.UUID       `json:"element_id"`
 	OrderID    int               `json:"-"`
 	Name       string            `json:"name"`
 	Type       types.ElementType `json:"type"`
@@ -53,7 +53,7 @@ func (e *Element) BeforeCreate(tx *gorm.DB) error {
 		Order("order_id desc").
 		Limit(1)
 
-	if e.ElementID.Valid() {
+	if e.ElementID != nil && e.ElementID.Valid() {
 		query = query.Where("element_id = ?", e.ElementID.String())
 	} else if e.ProjectID.Valid() {
 		query = query.Where("project_id = ?", e.ProjectID.String()).
@@ -64,6 +64,47 @@ func (e *Element) BeforeCreate(tx *gorm.DB) error {
 
 	query.Row().Scan(&lastOrder)
 	e.OrderID = lastOrder + 1
+
+	return nil
+}
+
+func (e *Element) BeforeDelete(tx *gorm.DB) error {
+	if e.Type != types.ElementTypeScreen {
+		return nil
+	}
+
+	var project Project
+
+	if err := tx.Where("id = ?", e.ProjectID.String()).Select([]string{"id", "main_screen"}).First(&project).Error; err != nil {
+		return err
+	}
+
+	if project.MainScreen != nil && project.MainScreen.Equal(e.ID) {
+		if err := tx.Exec(`UPDATE projects
+SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL ORDER BY order_id LIMIT 1)
+WHERE id = ?`, project.ID.String(), project.ID.String()).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (e *Element) AfterCreate(tx *gorm.DB) error {
+	if e.Type != types.ElementTypeScreen {
+		return nil
+	}
+
+	var project Project
+
+	if err := tx.Where("id = ?", e.ProjectID.String()).Select([]string{"id", "main_screen"}).First(&project).Error; err != nil {
+		return err
+	}
+
+	if project.MainScreen == nil {
+		project.MainScreen = &e.ID
+		tx.Model(&project).UpdateColumns(project)
+	}
 
 	return nil
 }
@@ -104,6 +145,10 @@ func (e *Element) Delete() error {
 	return db.Delete(e).Error
 }
 
+func (e *Element) Exists() bool {
+	return exists("elements", e.ID.String())
+}
+
 // GetElement gets the element data.
 func GetElement(id types.UUID) (*Element, error) {
 	e := new(Element)
@@ -123,7 +168,7 @@ func appendIfMissing(arr []string, key ...string) []string {
 func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 	var list []*Element
 	var id string
-	var elementID types.UUID
+	// var elementID *types.UUID
 	var columns []string
 
 	if len(option.Select) == 0 {
@@ -143,8 +188,9 @@ func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 SELECT ` + selectColumns + `, 1 AS depth FROM elements WHERE `
 
 	if option.ElementID != nil {
-		elementID = *option.ElementID
-		id = elementID.String()
+		// elementID = *option.ElementID
+		// id = elementID.String()
+		id = option.ElementID.String()
 		raw += "element_id = ?"
 	} else if option.ProjectID != nil {
 		id = option.ProjectID.String()
@@ -174,16 +220,16 @@ SELECT * FROM tree ORDER BY depth, order_id;`
 		return list, nil
 	}
 
-	return buildElementTree(list, elementID), nil
+	return buildElementTree(list, option.ElementID), nil
 }
 
-func buildElementTree(list []*Element, parentID types.UUID) []*Element {
+func buildElementTree(list []*Element, parentID *types.UUID) []*Element {
 	var result []*Element
 
 	for i, item := range list {
-		if parentID.Equal(item.ElementID) {
+		if (parentID == nil && item.ElementID == nil) || (item.ElementID != nil && parentID != nil && parentID.Equal(*item.ElementID)) {
 			result = append(result, item)
-			item.Elements = buildElementTree(list[i:], item.ID)
+			item.Elements = buildElementTree(list[i:], &item.ID)
 		}
 	}
 

@@ -62,6 +62,11 @@ func ElementList(res http.ResponseWriter, req *http.Request) error {
 
 func ChildElementList(res http.ResponseWriter, req *http.Request) error {
 	element, err := GetElement(res, req)
+
+	if err != nil {
+		return err
+	}
+
 	option := parseElementListQueryOption(req)
 	option.ElementID = &element.ID
 
@@ -168,7 +173,7 @@ func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
 
 	element := &model.Element{
 		ProjectID: parent.ProjectID,
-		ElementID: parent.ID,
+		ElementID: &parent.ID,
 	}
 
 	if err := saveElement(form, element); err != nil {
