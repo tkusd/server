@@ -94,6 +94,7 @@ type elementForm struct {
 	Attributes *types.JSONObject        `json:"attributes"`
 	Styles     *types.JSONObject        `json:"styles"`
 	Elements   *[]model.ElementTreeItem `json:"elements"`
+	IsVisible  *bool                    `json:"is_visible"`
 }
 
 func (form *elementForm) FieldMap() binding.FieldMap {
@@ -103,6 +104,7 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Attributes: "attributes",
 		&form.Styles:     "styles",
 		&form.Elements:   "elements",
+		&form.IsVisible:  "is_visible",
 	}
 }
 
@@ -121,6 +123,10 @@ func saveElement(form *elementForm, element *model.Element) error {
 
 	if form.Styles != nil {
 		element.Styles = *form.Styles
+	}
+
+	if form.IsVisible != nil {
+		element.IsVisible = *form.IsVisible
 	}
 
 	return element.Save()

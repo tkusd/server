@@ -24,6 +24,7 @@ type Element struct {
 	UpdatedAt  types.Time        `json:"updated_at"`
 	Attributes types.JSONObject  `json:"attributes"`
 	Styles     types.JSONObject  `json:"styles"`
+	IsVisible  bool              `json:"is_visible"`
 
 	// Virtual attributes
 	Elements []*Element `json:"elements,omitempty" sql:"-"`
@@ -226,7 +227,7 @@ func buildElementTree(list []*Element, parentID types.UUID) []*Element {
 	var result []*Element
 
 	for i, item := range list {
-		if parentID.Equal(item.ID) {
+		if parentID.Equal(item.ElementID) {
 			result = append(result, item)
 			item.Elements = buildElementTree(list[i:], item.ID)
 		}
