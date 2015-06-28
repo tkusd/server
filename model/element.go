@@ -138,6 +138,14 @@ func (e *Element) Save() error {
 		}
 	}
 
+	if e.Attributes == nil {
+		e.Attributes = map[string]interface{}{}
+	}
+
+	if e.Styles == nil {
+		e.Styles = map[string]interface{}{}
+	}
+
 	return db.Save(e).Error
 }
 
