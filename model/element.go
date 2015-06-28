@@ -82,8 +82,8 @@ func (e *Element) BeforeDelete(tx *gorm.DB) error {
 
 	if project.MainScreen.Equal(e.ID) {
 		if err := tx.Exec(`UPDATE projects
-SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL ORDER BY order_id LIMIT 1)
-WHERE id = ?`, project.ID.String(), project.ID.String()).Error; err != nil {
+SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL AND id <> ? ORDER BY order_id LIMIT 1)
+WHERE id = ?`, project.ID.String(), e.ID.String(), project.ID.String()).Error; err != nil {
 			return err
 		}
 	}
