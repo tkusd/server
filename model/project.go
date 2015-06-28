@@ -11,14 +11,14 @@ import (
 
 // Project represents the data structure of a project.
 type Project struct {
-	ID          types.UUID  `json:"id"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	UserID      types.UUID  `json:"user_id"`
-	CreatedAt   types.Time  `json:"created_at"`
-	UpdatedAt   types.Time  `json:"updated_at"`
-	IsPrivate   bool        `json:"is_private"`
-	MainScreen  *types.UUID `json:"main_screen"`
+	ID          types.UUID `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	UserID      types.UUID `json:"user_id"`
+	CreatedAt   types.Time `json:"created_at"`
+	UpdatedAt   types.Time `json:"updated_at"`
+	IsPrivate   bool       `json:"is_private"`
+	MainScreen  types.UUID `json:"main_screen"`
 
 	// Virtual attributes
 	Owner struct {
@@ -48,8 +48,8 @@ type ProjectQueryOption struct {
 func (p *Project) BeforeSave() error {
 	p.UpdatedAt = types.Now()
 
-	if p.MainScreen != nil {
-		screen := Element{ID: *p.MainScreen}
+	if p.MainScreen.Valid() {
+		screen := Element{ID: p.MainScreen}
 
 		if !screen.Exists() {
 			return &util.APIError{

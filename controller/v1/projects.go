@@ -174,12 +174,12 @@ func ProjectUpdate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	if err := saveProject(form, project); err != nil {
-		return err
+	if form.MainScreen != nil {
+		project.MainScreen = *form.MainScreen
 	}
 
-	if form.MainScreen != nil {
-		project.MainScreen = form.MainScreen
+	if err := saveProject(form, project); err != nil {
+		return err
 	}
 
 	if form.Elements != nil {

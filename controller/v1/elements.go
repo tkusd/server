@@ -173,7 +173,7 @@ func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
 
 	element := &model.Element{
 		ProjectID: parent.ProjectID,
-		ElementID: &parent.ID,
+		ElementID: parent.ID,
 	}
 
 	if err := saveElement(form, element); err != nil {
