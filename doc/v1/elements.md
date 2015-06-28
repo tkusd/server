@@ -11,9 +11,10 @@ POST /v1/elements/:element_id/elements
 
 參數 | 型別 | 說明 | 預設值
 --- | --- | --- | ---
-`name` | string | 名稱 | 
+`name` | string | 名稱 |
 `type` | string | 類型（見下方） | **必填**
 `attributes` | object | 屬性
+`is_visible` | boolean | 元素是否可見 | true
 
 ### Response
 
@@ -27,6 +28,7 @@ POST /v1/elements/:element_id/elements
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
+`is_visible` | boolean | 元素是否可見
 
 ## 取得元素
 
@@ -46,6 +48,7 @@ GET /v1/elements/:element_id
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
+`is_visible` | boolean | 元素是否可見
 
 ## 更新元素
 
@@ -61,6 +64,7 @@ PUT /v1/elements/:element_id
 `type` | string | 類型（見下方）
 `attributes` | object | 屬性
 `elements` | []uuid | 子元素
+`is_visible` | boolean | 元素是否可見
 
 #### 更新元素排序
 
@@ -93,6 +97,7 @@ PUT /v1/elements/:element_id
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
+`is_visible` | boolean | 元素是否可見
 
 ## 刪除元素
 
