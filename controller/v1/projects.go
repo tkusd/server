@@ -131,6 +131,14 @@ func getProjectWithOwner(res http.ResponseWriter, req *http.Request) (*model.Pro
 		return nil, err
 	}
 
+	if project == nil {
+		return nil, &util.APIError{
+			Code:    util.ProjectNotFoundError,
+			Message: "Project not found.",
+			Status:  http.StatusNotFound,
+		}
+	}
+
 	token, _ := CheckToken(res, req)
 
 	if project.IsPrivate && !project.UserID.Equal(token.UserID) {

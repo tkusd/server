@@ -25,6 +25,7 @@ const (
 	projectFullURL            = projectSingularURL + "/full"
 	elementCollectionURL      = projectSingularURL + "/elements"
 	elementSingularURL        = "/elements/:" + elementIDParam
+	elementFullURL            = elementSingularURL + "/full"
 	childElementCollectionURL = elementSingularURL + "/elements"
 	tokenCollectionURL        = "/tokens"
 	tokenSingularURL          = "/tokens/:" + tokenIDParam
@@ -45,13 +46,14 @@ func Router() http.Handler {
 	r.GET(projectSingularURL, common.ChainHandler(CheckProjectExist, ProjectShow))
 	r.PUT(projectSingularURL, common.WrapCommonHandle(ProjectUpdate))
 	r.DELETE(projectSingularURL, common.WrapCommonHandle(ProjectDestroy))
-	r.GET(projectFullURL, common.ChainHandler(CheckProjectExist, ProjectFull))
+	r.GET(projectFullURL, common.WrapCommonHandle(ProjectFull))
 
 	r.GET(elementCollectionURL, common.ChainHandler(CheckProjectExist, ElementList))
 	r.POST(elementCollectionURL, common.WrapCommonHandle(ElementCreate))
 	r.GET(elementSingularURL, common.WrapCommonHandle(ElementShow))
 	r.PUT(elementSingularURL, common.WrapCommonHandle(ElementUpdate))
 	r.DELETE(elementSingularURL, common.WrapCommonHandle(ElementDestroy))
+	r.GET(elementFullURL, common.WrapCommonHandle(ElementFull))
 
 	r.GET(childElementCollectionURL, common.WrapCommonHandle(ChildElementList))
 	r.POST(childElementCollectionURL, common.WrapCommonHandle(ChildElementCreate))

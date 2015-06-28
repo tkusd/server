@@ -69,6 +69,7 @@ GET /v1/projects/:project_id
 
 ```
 GET /v1/projects/:project_id/full
+GET /v1/elements/:element_id/full
 ```
 
 可用參數請參考：[取得元素列表](elements.md#取得元素列表)

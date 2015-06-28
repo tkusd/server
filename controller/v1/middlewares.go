@@ -226,3 +226,25 @@ func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectI
 		Status:  http.StatusForbidden,
 	}
 }
+
+func CheckElementExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	id, err := GetIDParam(req, elementIDParam)
+
+	if err != nil {
+		common.HandleAPIError(res, req, err)
+		return
+	}
+
+	element := &model.Element{ID: *id}
+
+	if element.Exists() {
+		next(res, req)
+		return
+	}
+
+	common.HandleAPIError(res, req, &util.APIError{
+		Code:    util.ElementNotFoundError,
+		Message: "Element not found.",
+		Status:  http.StatusNotFound,
+	})
+}

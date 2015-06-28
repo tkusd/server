@@ -70,10 +70,6 @@ func ChildElementList(res http.ResponseWriter, req *http.Request) error {
 	option := parseElementListQueryOption(req)
 	option.ElementID = &element.ID
 
-	if err != nil {
-		return err
-	}
-
 	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
 		return err
 	}
@@ -259,5 +255,35 @@ func ElementDestroy(res http.ResponseWriter, req *http.Request) error {
 	}
 
 	res.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
+func ElementFull(res http.ResponseWriter, req *http.Request) error {
+	element, err := GetElement(res, req)
+
+	if err != nil {
+		return err
+	}
+
+	option := parseElementListQueryOption(req)
+	option.ElementID = &element.ID
+
+	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
+		return err
+	}
+
+	list, err := model.GetElementList(option)
+
+	if err != nil {
+		return err
+	}
+
+	common.APIResponse(res, req, http.StatusOK, struct {
+		*model.Element
+		Elements []*model.Element `json:"elements"`
+	}{
+		Element:  element,
+		Elements: list,
+	})
 	return nil
 }
