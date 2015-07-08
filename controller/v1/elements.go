@@ -146,7 +146,10 @@ func ElementCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	element := &model.Element{ProjectID: project.ID}
+	element := &model.Element{
+		ProjectID: project.ID,
+		IsVisible: true,
+	}
 
 	if err := saveElement(form, element); err != nil {
 		return err
@@ -176,6 +179,7 @@ func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
 	element := &model.Element{
 		ProjectID: parent.ProjectID,
 		ElementID: parent.ID,
+		IsVisible: true,
 	}
 
 	if err := saveElement(form, element); err != nil {
