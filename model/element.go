@@ -17,7 +17,7 @@ type Element struct {
 	ID         types.UUID        `json:"id"`
 	ProjectID  types.UUID        `json:"project_id"`
 	ElementID  types.UUID        `json:"element_id"`
-	OrderID    int               `json:"-"`
+	OrderID    int               `json:"order_id"`
 	Name       string            `json:"name"`
 	Type       types.ElementType `json:"type"`
 	CreatedAt  types.Time        `json:"created_at"`
