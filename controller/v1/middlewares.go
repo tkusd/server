@@ -5,6 +5,7 @@ import (
 
 	"regexp"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
 	"github.com/tkusd/server/model/types"
@@ -13,8 +14,8 @@ import (
 
 var rToken = regexp.MustCompile(`Bearer ([A-Za-z0-9\-\._~\+\/]+=*)`)
 
-func GetIDParam(req *http.Request, param string) (*types.UUID, error) {
-	id := common.GetParam(req, param)
+func GetIDParam(c *gin.Context, param string) (*types.UUID, error) {
+	id := c.Param(param)
 
 	if id == "" {
 		return nil, &util.APIError{
@@ -35,8 +36,8 @@ func GetIDParam(req *http.Request, param string) (*types.UUID, error) {
 	return &uid, nil
 }
 
-func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) {
-	id, err := GetIDParam(req, tokenIDParam)
+func GetToken(c *gin.Context) (*model.Token, error) {
+	id, err := GetIDParam(c, tokenIDParam)
 
 	if err != nil {
 		return nil, err
@@ -54,8 +55,8 @@ func GetToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) 
 }
 
 // CheckToken checks the Authorization header and gets the token from the database.
-func CheckToken(res http.ResponseWriter, req *http.Request) (*model.Token, error) {
-	authHeader := req.Header.Get("Authorization")
+func CheckToken(c *gin.Context) (*model.Token, error) {
+	authHeader := c.Request.Header.Get("Authorization")
 
 	if authHeader == "" || !rToken.MatchString(authHeader) {
 		return nil, &util.APIError{
@@ -81,8 +82,8 @@ func CheckToken(res http.ResponseWriter, req *http.Request) (*model.Token, error
 }
 
 // GetUser parses user_id in the URL and gets the user data from the database.
-func GetUser(res http.ResponseWriter, req *http.Request) (*model.User, error) {
-	id, err := GetIDParam(req, userIDParam)
+func GetUser(c *gin.Context) (*model.User, error) {
+	id, err := GetIDParam(c, userIDParam)
 
 	if err != nil {
 		return nil, err
@@ -100,8 +101,8 @@ func GetUser(res http.ResponseWriter, req *http.Request) (*model.User, error) {
 }
 
 // CheckUserPermission checks whether the current token matching user ID.
-func CheckUserPermission(res http.ResponseWriter, req *http.Request, userID types.UUID) error {
-	token, err := CheckToken(res, req)
+func CheckUserPermission(c *gin.Context, userID types.UUID) error {
+	token, err := CheckToken(c)
 
 	if err != nil {
 		return err
@@ -119,22 +120,22 @@ func CheckUserPermission(res http.ResponseWriter, req *http.Request, userID type
 }
 
 // CheckUserExist checks whether the user exists or not.
-func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	id, err := GetIDParam(req, userIDParam)
+func CheckUserExist(c *gin.Context) {
+	id, err := GetIDParam(c, userIDParam)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
+		common.HandleAPIError(c, err)
 		return
 	}
 
 	user := &model.User{ID: *id}
 
 	if user.Exists() {
-		next(res, req)
+		c.Next()
 		return
 	}
 
-	common.HandleAPIError(res, req, &util.APIError{
+	common.HandleAPIError(c, &util.APIError{
 		Code:    util.UserNotFoundError,
 		Message: "User not found.",
 		Status:  http.StatusNotFound,
@@ -142,8 +143,8 @@ func CheckUserExist(res http.ResponseWriter, req *http.Request, next http.Handle
 }
 
 // GetProject parses project_id in the URL and gets the project data from the database.
-func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, error) {
-	id, err := GetIDParam(req, projectIDParam)
+func GetProject(c *gin.Context) (*model.Project, error) {
+	id, err := GetIDParam(c, projectIDParam)
 
 	if err != nil {
 		return nil, err
@@ -161,22 +162,22 @@ func GetProject(res http.ResponseWriter, req *http.Request) (*model.Project, err
 }
 
 // CheckProjectExist checks whether the project exists or not.
-func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	id, err := GetIDParam(req, projectIDParam)
+func CheckProjectExist(c *gin.Context) {
+	id, err := GetIDParam(c, projectIDParam)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
+		common.HandleAPIError(c, err)
 		return
 	}
 
 	project := &model.Project{ID: *id}
 
 	if project.Exists() {
-		next(res, req)
+		c.Next()
 		return
 	}
 
-	common.HandleAPIError(res, req, &util.APIError{
+	common.HandleAPIError(c, &util.APIError{
 		Code:    util.ProjectNotFoundError,
 		Message: "Project not found.",
 		Status:  http.StatusNotFound,
@@ -184,8 +185,8 @@ func CheckProjectExist(res http.ResponseWriter, req *http.Request, next http.Han
 }
 
 // GetElement parses element_id in the URL and gets the element data from the database.
-func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, error) {
-	id, err := GetIDParam(req, elementIDParam)
+func GetElement(c *gin.Context) (*model.Element, error) {
+	id, err := GetIDParam(c, elementIDParam)
 
 	if err != nil {
 		return nil, err
@@ -203,8 +204,8 @@ func GetElement(res http.ResponseWriter, req *http.Request) (*model.Element, err
 }
 
 // CheckProjectPermission checks whether the current user is able to edit the project.
-func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectID types.UUID, strict bool) error {
-	token, err := CheckToken(res, req)
+func CheckProjectPermission(c *gin.Context, projectID types.UUID, strict bool) error {
+	token, err := CheckToken(c)
 
 	if strict && err != nil {
 		return err
@@ -227,22 +228,22 @@ func CheckProjectPermission(res http.ResponseWriter, req *http.Request, projectI
 	}
 }
 
-func CheckElementExist(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	id, err := GetIDParam(req, elementIDParam)
+func CheckElementExist(c *gin.Context) {
+	id, err := GetIDParam(c, elementIDParam)
 
 	if err != nil {
-		common.HandleAPIError(res, req, err)
+		common.HandleAPIError(c, err)
 		return
 	}
 
 	element := &model.Element{ID: *id}
 
 	if element.Exists() {
-		next(res, req)
+		c.Next()
 		return
 	}
 
-	common.HandleAPIError(res, req, &util.APIError{
+	common.HandleAPIError(c, &util.APIError{
 		Code:    util.ElementNotFoundError,
 		Message: "Element not found.",
 		Status:  http.StatusNotFound,

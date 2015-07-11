@@ -4,23 +4,25 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
 	"github.com/tkusd/server/model/types"
 )
 
-func parseElementListQueryOption(req *http.Request) *model.ElementQueryOption {
+func parseElementListQueryOption(c *gin.Context) *model.ElementQueryOption {
 	var option model.ElementQueryOption
-	query := req.URL.Query()
 
-	if flat, ok := query["flat"]; ok {
-		if len(flat) == 0 || (flat[0] != "false" && flat[0] != "0") {
+	if common.QueryExist(c, "flat") {
+		flat := c.Query("flat")
+
+		if flat == "" || (flat != "false" && flat != "0") {
 			option.Flat = true
 		}
 	}
 
-	if depth := query.Get("depth"); depth != "" {
+	if depth := c.Query("depth"); depth != "" {
 		if i, err := strconv.Atoi(depth); err == nil {
 			option.Depth = uint(i)
 		}
@@ -36,17 +38,17 @@ func parseElementListQueryOption(req *http.Request) *model.ElementQueryOption {
 }
 
 // ElementList handles GET /projects/:project_id/elements.
-func ElementList(res http.ResponseWriter, req *http.Request) error {
-	projectID, err := GetIDParam(req, projectIDParam)
+func ElementList(c *gin.Context) error {
+	projectID, err := GetIDParam(c, projectIDParam)
 
 	if err != nil {
 		return err
 	}
 
-	option := parseElementListQueryOption(req)
+	option := parseElementListQueryOption(c)
 	option.ProjectID = projectID
 
-	if err := CheckProjectPermission(res, req, *projectID, false); err != nil {
+	if err := CheckProjectPermission(c, *projectID, false); err != nil {
 		return err
 	}
 
@@ -56,21 +58,20 @@ func ElementList(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, list)
-	return nil
+	return common.APIResponse(c, http.StatusOK, list)
 }
 
-func ChildElementList(res http.ResponseWriter, req *http.Request) error {
-	element, err := GetElement(res, req)
+func ChildElementList(c *gin.Context) error {
+	element, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	option := parseElementListQueryOption(req)
+	option := parseElementListQueryOption(c)
 	option.ElementID = &element.ID
 
-	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
+	if err := CheckProjectPermission(c, element.ProjectID, false); err != nil {
 		return err
 	}
 
@@ -80,8 +81,7 @@ func ChildElementList(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, list)
-	return nil
+	return common.APIResponse(c, http.StatusOK, list)
 }
 
 type elementForm struct {
@@ -129,20 +129,20 @@ func saveElement(form *elementForm, element *model.Element) error {
 }
 
 // ElementCreate handles POST /projects/:project_id/elements.
-func ElementCreate(res http.ResponseWriter, req *http.Request) error {
-	project, err := GetProject(res, req)
+func ElementCreate(c *gin.Context) error {
+	project, err := GetProject(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, project.UserID); err != nil {
+	if err := CheckUserPermission(c, project.UserID); err != nil {
 		return err
 	}
 
 	form := new(elementForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
@@ -155,24 +155,23 @@ func ElementCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusCreated, element)
-	return nil
+	return common.APIResponse(c, http.StatusCreated, element)
 }
 
-func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
-	parent, err := GetElement(res, req)
+func ChildElementCreate(c *gin.Context) error {
+	parent, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckProjectPermission(res, req, parent.ProjectID, true); err != nil {
+	if err := CheckProjectPermission(c, parent.ProjectID, true); err != nil {
 		return err
 	}
 
 	form := new(elementForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
@@ -186,41 +185,39 @@ func ChildElementCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusCreated, element)
-	return nil
+	return common.APIResponse(c, http.StatusCreated, element)
 }
 
 // ElementShow handles GET /elements/:element_id.
-func ElementShow(res http.ResponseWriter, req *http.Request) error {
-	element, err := GetElement(res, req)
+func ElementShow(c *gin.Context) error {
+	element, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
+	if err := CheckProjectPermission(c, element.ProjectID, false); err != nil {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, element)
-	return nil
+	return common.APIResponse(c, http.StatusOK, element)
 }
 
 // ElementUpdate handles PUT /elements/:element_id.
-func ElementUpdate(res http.ResponseWriter, req *http.Request) error {
+func ElementUpdate(c *gin.Context) error {
 	form := new(elementForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
-	element, err := GetElement(res, req)
+	element, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
+	if err := CheckProjectPermission(c, element.ProjectID, true); err != nil {
 		return err
 	}
 
@@ -238,19 +235,18 @@ func ElementUpdate(res http.ResponseWriter, req *http.Request) error {
 		}
 	}
 
-	common.APIResponse(res, req, http.StatusOK, element)
-	return nil
+	return common.APIResponse(c, http.StatusOK, element)
 }
 
 // ElementDestroy handles DELETE /elements/:element_id.
-func ElementDestroy(res http.ResponseWriter, req *http.Request) error {
-	element, err := GetElement(res, req)
+func ElementDestroy(c *gin.Context) error {
+	element, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckProjectPermission(res, req, element.ProjectID, true); err != nil {
+	if err := CheckProjectPermission(c, element.ProjectID, true); err != nil {
 		return err
 	}
 
@@ -258,21 +254,21 @@ func ElementDestroy(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	res.WriteHeader(http.StatusNoContent)
+	c.Writer.WriteHeader(http.StatusNoContent)
 	return nil
 }
 
-func ElementFull(res http.ResponseWriter, req *http.Request) error {
-	element, err := GetElement(res, req)
+func ElementFull(c *gin.Context) error {
+	element, err := GetElement(c)
 
 	if err != nil {
 		return err
 	}
 
-	option := parseElementListQueryOption(req)
+	option := parseElementListQueryOption(c)
 	option.ElementID = &element.ID
 
-	if err := CheckProjectPermission(res, req, element.ProjectID, false); err != nil {
+	if err := CheckProjectPermission(c, element.ProjectID, false); err != nil {
 		return err
 	}
 
@@ -282,12 +278,11 @@ func ElementFull(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, struct {
+	return common.APIResponse(c, http.StatusOK, struct {
 		*model.Element
 		Elements []*model.Element `json:"elements"`
 	}{
 		Element:  element,
 		Elements: list,
 	})
-	return nil
 }

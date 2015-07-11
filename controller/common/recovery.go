@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"runtime"
 
-	"github.com/codegangsta/negroni"
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/util"
 )
 
@@ -14,12 +14,10 @@ const (
 	stackAll    = false
 )
 
-type recovery struct{}
-
-func (rec *recovery) ServeHTTP(res http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+func Recovery(c *gin.Context) {
 	defer func() {
 		if err := recover(); err != nil {
-			HandleAPIError(res, req, &util.APIError{
+			HandleAPIError(c, &util.APIError{
 				Code:    util.ServerError,
 				Status:  http.StatusInternalServerError,
 				Message: "Internal server error",
@@ -33,9 +31,5 @@ func (rec *recovery) ServeHTTP(res http.ResponseWriter, req *http.Request, next 
 		}
 	}()
 
-	next(res, req)
-}
-
-func NewRecovery() negroni.Handler {
-	return &recovery{}
+	c.Next()
 }

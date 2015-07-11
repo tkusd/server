@@ -3,13 +3,14 @@ package common
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/util"
 )
 
 // BindForm binds data to the struct.
-func BindForm(res http.ResponseWriter, req *http.Request, mapper binding.FieldMapper) error {
-	if err := binding.Bind(req, mapper); err != nil {
+func BindForm(c *gin.Context, mapper binding.FieldMapper) error {
+	if err := binding.Bind(c.Request, mapper); err != nil {
 		e := err[0]
 		code := util.UnknownError
 		status := http.StatusBadRequest

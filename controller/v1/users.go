@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
@@ -26,10 +27,10 @@ func (form *userForm) FieldMap() binding.FieldMap {
 }
 
 // UserCreate handles POST /users.
-func UserCreate(res http.ResponseWriter, req *http.Request) error {
+func UserCreate(c *gin.Context) error {
 	form := new(userForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
@@ -72,42 +73,39 @@ func UserCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusCreated, user)
-	return nil
+	return common.APIResponse(c, http.StatusCreated, user)
 }
 
 // UserShow handles GET /users/:user_id.
-func UserShow(res http.ResponseWriter, req *http.Request) error {
-	user, err := GetUser(res, req)
+func UserShow(c *gin.Context) error {
+	user, err := GetUser(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, user.ID); err == nil {
-		common.APIResponse(res, req, http.StatusOK, user)
-	} else {
-		common.APIResponse(res, req, http.StatusOK, user.PublicProfile())
+	if err := CheckUserPermission(c, user.ID); err == nil {
+		return common.APIResponse(c, http.StatusOK, user)
 	}
 
-	return nil
+	return common.APIResponse(c, http.StatusOK, user.PublicProfile())
 }
 
 // UserUpdate handles PUT /users/:user_id.
-func UserUpdate(res http.ResponseWriter, req *http.Request) error {
+func UserUpdate(c *gin.Context) error {
 	form := new(userForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
-	user, err := GetUser(res, req)
+	user, err := GetUser(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, user.ID); err != nil {
+	if err := CheckUserPermission(c, user.ID); err != nil {
 		return err
 	}
 
@@ -145,19 +143,18 @@ func UserUpdate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, user)
-	return nil
+	return common.APIResponse(c, http.StatusOK, user)
 }
 
 // UserDestroy handles DELETE /users/:user_id.
-func UserDestroy(res http.ResponseWriter, req *http.Request) error {
-	user, err := GetUser(res, req)
+func UserDestroy(c *gin.Context) error {
+	user, err := GetUser(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, user.ID); err != nil {
+	if err := CheckUserPermission(c, user.ID); err != nil {
 		return err
 	}
 
@@ -165,6 +162,6 @@ func UserDestroy(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	res.WriteHeader(http.StatusNoContent)
+	c.Writer.WriteHeader(http.StatusNoContent)
 	return nil
 }

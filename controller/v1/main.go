@@ -1,10 +1,7 @@
 package v1
 
 import (
-	"net/http"
-
-	"github.com/codegangsta/negroni"
-	"github.com/julienschmidt/httprouter"
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/controller/common"
 )
 
@@ -32,41 +29,30 @@ const (
 )
 
 // Router returns a http.Handler.
-func Router() http.Handler {
-	n := negroni.New()
-	r := httprouter.New()
+func Router(r *gin.RouterGroup) {
+	r.POST(userCollectionURL, common.Wrap(UserCreate))
+	r.GET(userSingularURL, common.Wrap(UserShow))
+	r.PUT(userSingularURL, common.Wrap(UserUpdate))
+	r.DELETE(userSingularURL, common.Wrap(UserDestroy))
 
-	r.POST(userCollectionURL, common.WrapCommonHandle(UserCreate))
-	r.GET(userSingularURL, common.WrapCommonHandle(UserShow))
-	r.PUT(userSingularURL, common.WrapCommonHandle(UserUpdate))
-	r.DELETE(userSingularURL, common.WrapCommonHandle(UserDestroy))
+	r.GET(projectCollectionURL, CheckUserExist, common.Wrap(ProjectList))
+	r.POST(projectCollectionURL, CheckUserExist, common.Wrap(ProjectCreate))
+	r.GET(projectSingularURL, CheckProjectExist, common.Wrap(ProjectShow))
+	r.PUT(projectSingularURL, common.Wrap(ProjectUpdate))
+	r.DELETE(projectSingularURL, common.Wrap(ProjectDestroy))
+	r.GET(projectFullURL, common.Wrap(ProjectFull))
 
-	r.GET(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectList))
-	r.POST(projectCollectionURL, common.ChainHandler(CheckUserExist, ProjectCreate))
-	r.GET(projectSingularURL, common.ChainHandler(CheckProjectExist, ProjectShow))
-	r.PUT(projectSingularURL, common.WrapCommonHandle(ProjectUpdate))
-	r.DELETE(projectSingularURL, common.WrapCommonHandle(ProjectDestroy))
-	r.GET(projectFullURL, common.WrapCommonHandle(ProjectFull))
+	r.GET(elementCollectionURL, CheckProjectExist, common.Wrap(ElementList))
+	r.POST(elementCollectionURL, common.Wrap(ElementCreate))
+	r.GET(elementSingularURL, common.Wrap(ElementShow))
+	r.PUT(elementSingularURL, common.Wrap(ElementUpdate))
+	r.DELETE(elementSingularURL, common.Wrap(ElementDestroy))
+	r.GET(elementFullURL, common.Wrap(ElementFull))
 
-	r.GET(elementCollectionURL, common.ChainHandler(CheckProjectExist, ElementList))
-	r.POST(elementCollectionURL, common.WrapCommonHandle(ElementCreate))
-	r.GET(elementSingularURL, common.WrapCommonHandle(ElementShow))
-	r.PUT(elementSingularURL, common.WrapCommonHandle(ElementUpdate))
-	r.DELETE(elementSingularURL, common.WrapCommonHandle(ElementDestroy))
-	r.GET(elementFullURL, common.WrapCommonHandle(ElementFull))
+	r.GET(childElementCollectionURL, common.Wrap(ChildElementList))
+	r.POST(childElementCollectionURL, common.Wrap(ChildElementCreate))
 
-	r.GET(childElementCollectionURL, common.WrapCommonHandle(ChildElementList))
-	r.POST(childElementCollectionURL, common.WrapCommonHandle(ChildElementCreate))
-
-	r.POST(tokenCollectionURL, common.WrapCommonHandle(TokenCreate))
-	r.PUT(tokenSingularURL, common.WrapCommonHandle(TokenUpdate))
-	r.DELETE(tokenSingularURL, common.WrapCommonHandle(TokenDestroy))
-
-	r.NotFound = common.NotFound
-	r.HandleMethodNotAllowed = false
-
-	n.Use(common.NewRecovery())
-	n.UseHandler(r)
-
-	return n
+	r.POST(tokenCollectionURL, common.Wrap(TokenCreate))
+	r.PUT(tokenSingularURL, common.Wrap(TokenUpdate))
+	r.DELETE(tokenSingularURL, common.Wrap(TokenDestroy))
 }

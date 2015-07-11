@@ -1,33 +1,24 @@
 package common
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/codegangsta/negroni"
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/util"
 )
 
-type logger struct{}
-
-func (l *logger) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+func Logger(c *gin.Context) {
 	start := time.Now()
 
 	defer func() {
-		res := rw.(negroni.ResponseWriter)
-
 		util.Log().WithFields(logrus.Fields{
 			"start":    start,
 			"duration": time.Since(start),
-			"method":   r.Method,
-			"code":     res.Status(),
-		}).Info(r.URL)
+			"method":   c.Request.Method,
+			"code":     c.Writer.Status(),
+		}).Info(c.Request.URL)
 	}()
 
-	next(rw, r)
-}
-
-func NewLogger() negroni.Handler {
-	return &logger{}
+	c.Next()
 }

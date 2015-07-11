@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
@@ -23,10 +24,10 @@ func (form *tokenForm) FieldMap() binding.FieldMap {
 }
 
 // TokenCreate handles POST /tokens.
-func TokenCreate(res http.ResponseWriter, req *http.Request) error {
+func TokenCreate(c *gin.Context) error {
 	form := new(tokenForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
@@ -66,15 +67,13 @@ func TokenCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.NoCacheHeader(res)
-	common.APIResponse(res, req, http.StatusCreated, token)
-
-	return nil
+	common.NoCacheHeader(c)
+	return common.APIResponse(c, http.StatusCreated, token)
 }
 
 // TokenUpdate handles PUT /tokens/:key.
-func TokenUpdate(res http.ResponseWriter, req *http.Request) error {
-	token, err := GetToken(res, req)
+func TokenUpdate(c *gin.Context) error {
+	token, err := GetToken(c)
 
 	if err != nil {
 		return err
@@ -84,15 +83,13 @@ func TokenUpdate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.NoCacheHeader(res)
-	common.APIResponse(res, req, http.StatusOK, token)
-
-	return nil
+	common.NoCacheHeader(c)
+	return common.APIResponse(c, http.StatusOK, token)
 }
 
 // TokenDestroy handles DELETE /tokens/:key.
-func TokenDestroy(res http.ResponseWriter, req *http.Request) error {
-	token, err := GetToken(res, req)
+func TokenDestroy(c *gin.Context) error {
+	token, err := GetToken(c)
 
 	if err != nil {
 		return err
@@ -102,6 +99,6 @@ func TokenDestroy(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	res.WriteHeader(http.StatusNoContent)
+	c.Writer.WriteHeader(http.StatusNoContent)
 	return nil
 }

@@ -3,64 +3,64 @@ package common
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 // RenderJSON renders JSON and add corresponding header to the response.
-func RenderJSON(res http.ResponseWriter, status int, value interface{}) {
-	res.Header().Set("Content-Type", "application/json")
-
+func RenderJSON(c *gin.Context, status int, value interface{}) error {
 	if result, err := json.Marshal(value); err == nil {
-		res.WriteHeader(status)
-		res.Header().Set("Content-Length", strconv.Itoa(len(result)))
-		res.Write(result)
+		c.Writer.WriteHeader(status)
+		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.Writer.Write(result)
 	} else {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 type jsonpData struct {
-	Status int
-	Data   interface{}
+	Meta *jsonpMeta   `json:"meta"`
+	Data *interface{} `json:"data"`
 }
 
-func (j jsonpData) MarshalJSON() ([]byte, error) {
-	return json.Marshal(map[string]interface{}{
-		"meta": map[string]interface{}{
-			"status": j.Status,
-		},
-		"data": j.Data,
-	})
+type jsonpMeta struct {
+	Status int `json:"status"`
 }
 
 // RenderJSONP renders JSON-P.
-func RenderJSONP(res http.ResponseWriter, status int, callback string, value interface{}) {
-	res.Header().Set("Content-Type", "application/javascript")
-
+func RenderJSONP(c *gin.Context, status int, callback string, value interface{}) error {
 	data := &jsonpData{
-		Status: status,
-		Data:   value,
+		Meta: &jsonpMeta{
+			Status: status,
+		},
+		Data: &value,
 	}
+
+	// c.Writer.WriteString(callback + "(")
 
 	if result, err := json.Marshal(data); err == nil {
 		result = append([]byte(callback+"("), result...)
 		result = append(result, ')')
 
-		res.WriteHeader(http.StatusOK)
-		res.Header().Set("Content-Length", strconv.Itoa(len(result)))
-		res.Write(result)
+		c.Writer.WriteHeader(http.StatusOK)
+		c.Header("Content-Type", "application/javascript; charset=utf-8")
+		c.Writer.Write(result)
 	} else {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 // APIResponse handles API responses.
-func APIResponse(res http.ResponseWriter, req *http.Request, status int, value interface{}) {
-	callback := req.URL.Query().Get("callback")
+func APIResponse(c *gin.Context, status int, value interface{}) error {
+	callback := c.Query("callback")
 
 	if callback != "" {
-		RenderJSONP(res, status, callback, value)
+		return RenderJSONP(c, status, callback, value)
 	} else {
-		RenderJSON(res, status, value)
+		return RenderJSON(c, status, value)
 	}
 }

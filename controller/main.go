@@ -1,47 +1,23 @@
 package controller
 
 import (
-	"net/http"
-
-	"github.com/codegangsta/negroni"
-	"github.com/julienschmidt/httprouter"
-	"github.com/phyber/negroni-gzip/gzip"
-	"github.com/rs/cors"
+	"github.com/gin-gonic/contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/controller/v1"
+	"github.com/tommy351/gin-cors"
 )
 
-// Router returns a http.Handler.
-func Router() http.Handler {
-	n := negroni.New()
-	r := httprouter.New()
+func Router() *gin.Engine {
+	g := gin.New()
 
-	r.GET("/", home)
-	r.GET("/activation/:key", UserActivation)
-	r.NotFound = common.NotFound
-	r.HandleMethodNotAllowed = false
+	g.Use(common.Recovery)
+	g.Use(common.Logger)
+	g.Use(gzip.Gzip(gzip.DefaultCompression))
+	g.Use(cors.Middleware(cors.Options{}))
+	g.GET("/", Home)
+	v1.Router(g.Group("/v1"))
+	g.NoRoute(common.NotFound)
 
-	n.Use(common.ClearContext())
-	n.Use(common.NewLogger())
-	n.Use(common.NewRecovery())
-	n.Use(gzip.Gzip(gzip.DefaultCompression))
-	// n.Use(common.CSR())
-	n.Use(cors.New(cors.Options{
-		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-		AllowedHeaders: []string{"Origin", "Accept", "Content-Type", "Authorization"},
-	}))
-	n.Use(common.NewSubRoute("/v1", v1.Router()))
-	n.UseHandler(r)
-
-	return n
-}
-
-func home(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	common.APIResponse(res, req, http.StatusOK, map[string]string{
-		"status": "ok",
-	})
-}
-
-func UserActivation(res http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	//
+	return g
 }

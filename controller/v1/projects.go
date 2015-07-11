@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
@@ -12,37 +13,36 @@ import (
 )
 
 // ProjectList handles GET /users/:user_id/projects.
-func ProjectList(res http.ResponseWriter, req *http.Request) error {
-	userID, err := GetIDParam(req, userIDParam)
+func ProjectList(c *gin.Context) error {
+	userID, err := GetIDParam(c, userIDParam)
 
 	if err != nil {
 		return err
 	}
 
-	query := req.URL.Query()
 	option := &model.ProjectQueryOption{
 		UserID: userID,
 	}
 
-	if limit := query.Get("limit"); limit != "" {
+	if limit := c.Query("limit"); limit != "" {
 		if i, err := strconv.Atoi(limit); err == nil {
 			option.Limit = i
 		}
 	}
 
-	if offset := query.Get("offset"); offset != "" {
+	if offset := c.Query("offset"); offset != "" {
 		if i, err := strconv.Atoi(offset); err == nil {
 			option.Offset = i
 		}
 	}
 
-	if order := query.Get("order"); order != "" {
+	if order := c.Query("order"); order != "" {
 		option.Order = order
 	} else {
 		option.Order = "-created_at"
 	}
 
-	if err := CheckUserPermission(res, req, *userID); err == nil {
+	if err := CheckUserPermission(c, *userID); err == nil {
 		option.Private = true
 	}
 
@@ -52,8 +52,7 @@ func ProjectList(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, list)
-	return nil
+	return common.APIResponse(c, http.StatusOK, list)
 }
 
 type projectForm struct {
@@ -91,20 +90,20 @@ func saveProject(form *projectForm, project *model.Project) error {
 }
 
 // ProjectCreate handles POST /users/:user_id/projects.
-func ProjectCreate(res http.ResponseWriter, req *http.Request) error {
-	userID, err := GetIDParam(req, userIDParam)
+func ProjectCreate(c *gin.Context) error {
+	userID, err := GetIDParam(c, userIDParam)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, *userID); err != nil {
+	if err := CheckUserPermission(c, *userID); err != nil {
 		return err
 	}
 
 	form := new(projectForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
@@ -114,12 +113,11 @@ func ProjectCreate(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusCreated, project)
-	return nil
+	return common.APIResponse(c, http.StatusCreated, project)
 }
 
-func getProjectWithOwner(res http.ResponseWriter, req *http.Request) (*model.Project, error) {
-	id, err := GetIDParam(req, projectIDParam)
+func getProjectWithOwner(c *gin.Context) (*model.Project, error) {
+	id, err := GetIDParam(c, projectIDParam)
 
 	if err != nil {
 		return nil, err
@@ -139,7 +137,7 @@ func getProjectWithOwner(res http.ResponseWriter, req *http.Request) (*model.Pro
 		}
 	}
 
-	token, _ := CheckToken(res, req)
+	token, _ := CheckToken(c)
 
 	if project.IsPrivate && !project.UserID.Equal(token.UserID) {
 		return nil, &util.APIError{
@@ -153,32 +151,31 @@ func getProjectWithOwner(res http.ResponseWriter, req *http.Request) (*model.Pro
 }
 
 // ProjectShow handles GET /projects/:project_id.
-func ProjectShow(res http.ResponseWriter, req *http.Request) error {
-	project, err := getProjectWithOwner(res, req)
+func ProjectShow(c *gin.Context) error {
+	project, err := getProjectWithOwner(c)
 
 	if err != nil {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, project)
-	return nil
+	return common.APIResponse(c, http.StatusOK, project)
 }
 
 // ProjectUpdate handles PUT /projects/:project_id.
-func ProjectUpdate(res http.ResponseWriter, req *http.Request) error {
+func ProjectUpdate(c *gin.Context) error {
 	form := new(projectForm)
 
-	if err := common.BindForm(res, req, form); err != nil {
+	if err := common.BindForm(c, form); err != nil {
 		return err
 	}
 
-	project, err := GetProject(res, req)
+	project, err := GetProject(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, project.UserID); err != nil {
+	if err := CheckUserPermission(c, project.UserID); err != nil {
 		return err
 	}
 
@@ -200,19 +197,18 @@ func ProjectUpdate(res http.ResponseWriter, req *http.Request) error {
 		}
 	}
 
-	common.APIResponse(res, req, http.StatusOK, project)
-	return nil
+	return common.APIResponse(c, http.StatusOK, project)
 }
 
 // ProjectDestroy handles DELETE /projects/:project_id.
-func ProjectDestroy(res http.ResponseWriter, req *http.Request) error {
-	project, err := GetProject(res, req)
+func ProjectDestroy(c *gin.Context) error {
+	project, err := GetProject(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckUserPermission(res, req, project.UserID); err != nil {
+	if err := CheckUserPermission(c, project.UserID); err != nil {
 		return err
 	}
 
@@ -220,18 +216,18 @@ func ProjectDestroy(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	res.WriteHeader(http.StatusNoContent)
+	c.Writer.WriteHeader(http.StatusNoContent)
 	return nil
 }
 
-func ProjectFull(res http.ResponseWriter, req *http.Request) error {
-	project, err := getProjectWithOwner(res, req)
+func ProjectFull(c *gin.Context) error {
+	project, err := getProjectWithOwner(c)
 
 	if err != nil {
 		return err
 	}
 
-	option := parseElementListQueryOption(req)
+	option := parseElementListQueryOption(c)
 	option.ProjectID = &project.ID
 
 	elements, err := model.GetElementList(option)
@@ -240,12 +236,11 @@ func ProjectFull(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 
-	common.APIResponse(res, req, http.StatusOK, struct {
+	return common.APIResponse(c, http.StatusOK, struct {
 		*model.Project
 		Elements []*model.Element `json:"elements"`
 	}{
 		Project:  project,
 		Elements: elements,
 	})
-	return nil
 }

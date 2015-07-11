@@ -1,10 +1,10 @@
 package common
 
-import "net/http"
+import "github.com/gin-gonic/gin"
 
 // NoCacheHeader adds no-cache data to the response header.
-func NoCacheHeader(res http.ResponseWriter) {
-	res.Header().Set("Pragma", "no-cache")
-	res.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	res.Header().Set("Expires", "0")
+func NoCacheHeader(c *gin.Context) {
+	c.Header("Pragma", "no-cache")
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Expires", "0")
 }

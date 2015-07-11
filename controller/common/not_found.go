@@ -3,12 +3,12 @@ package common
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/util"
 )
 
-// NotFound returns not found error to users.
-func NotFound(res http.ResponseWriter, req *http.Request) {
-	HandleAPIError(res, req, &util.APIError{
+func NotFound(c *gin.Context) {
+	HandleAPIError(c, &util.APIError{
 		Code:    util.NotFoundError,
 		Status:  http.StatusNotFound,
 		Message: "Not found",
