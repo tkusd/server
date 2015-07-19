@@ -1,38 +1,49 @@
-box: wercker/golang
-
-services:
-  - userminddeployer/postgresql9.4@0.0.7-usermind-9.4-3
+box: google/golang
 
 build:
   steps:
-    - setup-go-workspace
+    - wercker/setup-go-workspace:
+        package-dir: github.com/tkusd/server
+
     # - wercker/golint
 
     - script:
-        name: Set environment variables
-        code: |
-          export GO_ENV=wercker
-          export GO_CWD=$WERCKER_SOURCE_DIR
+        name: install godep
+        code: go get github.com/tools/godep
 
     - script:
-        name: go get
+        name: godep restore
         code: |
           cd $WERCKER_SOURCE_DIR
-          go version
-          go get -t ./...
+          godep restore
 
     - script:
-        name: Migrate database
-        code: |
-          go get bitbucket.org/liamstask/goose/cmd/goose
-          $GOPATH/bin/goose -env=wercker up
+        name: go env
+        code: godep go env
 
     - script:
         name: go build
         code: |
-          go build ./...
+          godep go build -o tkusd-server
 
+deploy:
+  steps:
+    - mktemp:
+        envvar: PRIVATEKEY_PATH
+    - create-file:
+        name: write key
+        filename: $PRIVATEKEY_PATH
+        content: $DEPLOY_KEY
+        overwrite: true
+        hide-from-log: true
     - script:
-        name: go test
-        code: |
-          go test ./...
+        name: rsync test
+        script: |
+          rsync
+          whereis rsync
+    - sjoerdmulder/rsync-deploy:
+        host: $DEPLOY_HOST
+        sshkey: $PRIVATEKEY_PATH
+        user: $DEPLOY_USER
+        sshport: $DEPLOY_PORT
+        directory: ~/tkusd-server
