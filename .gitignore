@@ -2,3 +2,5 @@
 .DS_Store
 *.iml
 build/
+Godeps/*
+!Godeps/Godeps.json

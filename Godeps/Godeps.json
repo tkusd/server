@@ -1,0 +1,106 @@
+{
+	"ImportPath": "github.com/tkusd/server",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "bitbucket.org/liamstask/goose/lib/goose",
+			"Rev": "8488cc47d90c8a502b1c41a462a6d9cc8ee0a895"
+		},
+		{
+			"ImportPath": "code.google.com/p/go-uuid/uuid",
+			"Comment": "null-15",
+			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.crypto/bcrypt",
+			"Comment": "null-215",
+			"Rev": "2a61df2221b6be21be1c1ded77821b0f71b29584"
+		},
+		{
+			"ImportPath": "code.google.com/p/go.crypto/blowfish",
+			"Comment": "null-215",
+			"Rev": "2a61df2221b6be21be1c1ded77821b0f71b29584"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3-4-gaaf92c9",
+			"Rev": "aaf92c95712104318fc35409745f1533aa5ff327"
+		},
+		{
+			"ImportPath": "github.com/asaskevich/govalidator",
+			"Rev": "0aac9dbd861b4831f39f1fd306a8191ae27acc01"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/contrib/gzip",
+			"Rev": "915fc6822dbf9137dafbd7f65cd7a58f5260d35b"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin",
+			"Comment": "v1.0rc1-130-g9bab006",
+			"Rev": "9bab0067762b990d53992ca469d43a5a08e727a0"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-88-ga197e5d",
+			"Rev": "a197e5d40516f2e9f74dcee085a5f2d4604e94df"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Rev": "d35a44c5b123c3a44c95beeff5d0f1f8bce6ed3b"
+		},
+		{
+			"ImportPath": "github.com/kylelemons/go-gypsy/yaml",
+			"Comment": "go.weekly.2011-11-02-19-g42fc2c7",
+			"Rev": "42fc2c7ee9b8bd0ff636cd2d7a8c0a49491044c5"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-51-ga8d8d01",
+			"Rev": "a8d8d01c4f91602f876bf5aa210274e8203a6b45"
+		},
+		{
+			"ImportPath": "github.com/manucorporat/sse",
+			"Rev": "c142f0f1baea5cef7f98a8a6c222f6134368c1f5"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-colorable",
+			"Rev": "40e4aedc8fabf8c23e040057540867186712faa5"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Rev": "5f64400729dce4425be38a0007e19949af4ee4f8"
+		},
+		{
+			"ImportPath": "github.com/mholt/binding",
+			"Rev": "6c082304f300fc70793cb0be18af0fdd4acd2b75"
+		},
+		{
+			"ImportPath": "github.com/tommy351/gin-cors",
+			"Rev": "dc91dec6313ae4db53481bf3b29cf6b94bf80357"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/godrv",
+			"Comment": "v1.5.4",
+			"Rev": "e08c2f35356576b3c3690c252fe5dca728ae9292"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/mysql",
+			"Comment": "v1.5.4",
+			"Rev": "e08c2f35356576b3c3690c252fe5dca728ae9292"
+		},
+		{
+			"ImportPath": "github.com/ziutek/mymysql/native",
+			"Comment": "v1.5.4",
+			"Rev": "e08c2f35356576b3c3690c252fe5dca728ae9292"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+		},
+		{
+			"ImportPath": "gopkg.in/bluesuncorp/validator.v5",
+			"Comment": "v5.10.1",
+			"Rev": "06aac46c918960c01a241888042fc5e4e922b899"
+		}
+	]
+}
