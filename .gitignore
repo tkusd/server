@@ -4,7 +4,3 @@
 build/
 Godeps/*
 !Godeps/Godeps.json
-/wercker
-/_builds/
-/_projects/
-/_steps/
