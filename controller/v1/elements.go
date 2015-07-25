@@ -86,7 +86,7 @@ func ChildElementList(c *gin.Context) error {
 
 type elementForm struct {
 	Name       *string                  `json:"name"`
-	Type       *types.ElementType       `json:"type"`
+	Type       *string                  `json:"type"`
 	Attributes *types.JSONObject        `json:"attributes"`
 	Styles     *types.JSONObject        `json:"styles"`
 	Elements   *[]model.ElementTreeItem `json:"elements"`

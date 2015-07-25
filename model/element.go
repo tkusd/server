@@ -14,17 +14,17 @@ import (
 
 // Element represents the data structure of a element.
 type Element struct {
-	ID         types.UUID        `json:"id"`
-	ProjectID  types.UUID        `json:"project_id"`
-	ElementID  types.UUID        `json:"element_id"`
-	OrderID    int               `json:"order_id"`
-	Name       string            `json:"name"`
-	Type       types.ElementType `json:"type"`
-	CreatedAt  types.Time        `json:"created_at"`
-	UpdatedAt  types.Time        `json:"updated_at"`
-	Attributes types.JSONObject  `json:"attributes"`
-	Styles     types.JSONObject  `json:"styles"`
-	IsVisible  bool              `json:"is_visible"`
+	ID         types.UUID       `json:"id"`
+	ProjectID  types.UUID       `json:"project_id"`
+	ElementID  types.UUID       `json:"element_id"`
+	OrderID    int              `json:"order_id"`
+	Name       string           `json:"name"`
+	Type       string           `json:"type"`
+	CreatedAt  types.Time       `json:"created_at"`
+	UpdatedAt  types.Time       `json:"updated_at"`
+	Attributes types.JSONObject `json:"attributes"`
+	Styles     types.JSONObject `json:"styles"`
+	IsVisible  bool             `json:"is_visible"`
 
 	// Virtual attributes
 	Elements []*Element `json:"elements,omitempty" sql:"-"`
@@ -70,7 +70,7 @@ func (e *Element) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (e *Element) BeforeDelete(tx *gorm.DB) error {
-	if e.Type != types.ElementTypeScreen {
+	if e.Type != "screen" {
 		return nil
 	}
 
@@ -92,7 +92,7 @@ WHERE id = ?`, project.ID.String(), e.ID.String(), project.ID.String()).Error; e
 }
 
 func (e *Element) AfterCreate(tx *gorm.DB) error {
-	if e.Type != types.ElementTypeScreen {
+	if e.Type != "screen" {
 		return nil
 	}
 
@@ -122,19 +122,11 @@ func (e *Element) Save() error {
 		}
 	}
 
-	if e.Type == 0 {
+	if e.Type == "" {
 		return &util.APIError{
 			Field:   "type",
 			Code:    util.RequiredError,
 			Message: "Element type is required.",
-		}
-	}
-
-	if e.Type.String() == "" {
-		return &util.APIError{
-			Field:   "type",
-			Code:    util.UnsupportedElementTypeError,
-			Message: "Unsupported element type.",
 		}
 	}
 
