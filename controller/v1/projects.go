@@ -56,11 +56,11 @@ func ProjectList(c *gin.Context) error {
 }
 
 type projectForm struct {
-	Title       *string                  `json:"title"`
-	Description *string                  `json:"description"`
-	IsPrivate   *bool                    `json:"is_private"`
-	Elements    *[]model.ElementTreeItem `json:"elements"`
-	MainScreen  *types.UUID              `json:"main_screen"`
+	Title       *string       `json:"title"`
+	Description *string       `json:"description"`
+	IsPrivate   *bool         `json:"is_private"`
+	Elements    *[]types.UUID `json:"elements"`
+	MainScreen  *types.UUID   `json:"main_screen"`
 }
 
 func (form *projectForm) FieldMap() binding.FieldMap {

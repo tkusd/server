@@ -85,12 +85,12 @@ func ChildElementList(c *gin.Context) error {
 }
 
 type elementForm struct {
-	Name       *string                  `json:"name"`
-	Type       *string                  `json:"type"`
-	Attributes *types.JSONObject        `json:"attributes"`
-	Styles     *types.JSONObject        `json:"styles"`
-	Elements   *[]model.ElementTreeItem `json:"elements"`
-	IsVisible  *bool                    `json:"is_visible"`
+	Name       *string           `json:"name"`
+	Type       *string           `json:"type"`
+	Attributes *types.JSONObject `json:"attributes"`
+	Styles     *types.JSONObject `json:"styles"`
+	Elements   *[]types.UUID     `json:"elements"`
+	IsVisible  *bool             `json:"is_visible"`
 }
 
 func (form *elementForm) FieldMap() binding.FieldMap {

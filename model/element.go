@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strconv"
@@ -240,95 +241,45 @@ func buildElementTree(list []*Element, parentID types.UUID) []*Element {
 	return result
 }
 
-func UpdateElementOrder(option *ElementQueryOption, tree []ElementTreeItem) error {
-	if err := checkElementTree(option, tree); err != nil {
-		return err
+func UpdateElementOrder(option *ElementQueryOption, elements []types.UUID) error {
+	// Check whether all elements are owned by the same project
+	projectID := *option.ProjectID
+	tx := db.Begin()
+
+	for _, elementID := range elements {
+		var exist sql.NullBool
+		tx.Raw("SELECT exists(SELECT 1 FROM elements WHERE id = ? AND project_id = ?)", elementID.String(), projectID.String()).Row().Scan(&exist)
+
+		if !exist.Bool {
+			tx.Rollback()
+			return &util.APIError{
+				Code:    util.ElementNotFoundError,
+				Message: fmt.Sprintf("Element %s does not exist or is not the children of project %s", elementID.String(), projectID.String()),
+			}
+		}
 	}
 
+	// Start updating the order of elements
 	var parentID types.UUID
-	tx := db.Begin()
 
 	if option.ElementID != nil {
 		parentID = *option.ElementID
 	}
 
-	if err := updateElementOrderInTx(tx, parentID, tree); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	tx.Commit()
-	return nil
-}
-
-func checkElementTree(option *ElementQueryOption, tree []ElementTreeItem) error {
-	children, err := GetElementList(&ElementQueryOption{
-		ProjectID: option.ProjectID,
-		ElementID: option.ElementID,
-		Flat:      true,
-		Select:    []string{"id", "order_id"}, // order_id is needed for sorting
-	})
-
-	if err != nil {
-		return err
-	}
-
-	ids := pickElementIDFromTree(tree)
-
-	if len(ids) != len(children) {
-		return &util.APIError{
-			Code:    util.ElementTreeNotCompletedError,
-			Message: "You didn't provide the full list of children.",
-		}
-	}
-
-	for _, id := range ids {
-		found := false
-
-		for _, elem := range children {
-			if id.Equal(elem.ID) {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return &util.APIError{
-				Code:    util.ElementNotInTreeError,
-				Message: fmt.Sprintf("Element %s is not a child of the specified element.", id.String()),
-			}
-		}
-	}
-
-	return nil
-}
-
-func pickElementIDFromTree(tree []ElementTreeItem) []types.UUID {
-	var list []types.UUID
-
-	for _, item := range tree {
-		list = append(list, item.ID)
-		list = append(list, pickElementIDFromTree(item.Elements)...)
-	}
-
-	return list
-}
-
-func updateElementOrderInTx(tx *gorm.DB, parentID types.UUID, tree []ElementTreeItem) error {
-	for i, item := range tree {
+	for i, elementID := range elements {
 		data := map[string]interface{}{
 			"element_id": parentID,
 			"order_id":   i + 1,
 		}
 
-		if err := tx.Table("elements").Where("id = ?", item.ID.String()).UpdateColumns(data).Error; err != nil {
-			return err
-		}
-
-		if err := updateElementOrderInTx(tx, item.ID, item.Elements); err != nil {
+		if err := tx.Table("elements").Where("id = ?", elementID.String()).UpdateColumns(data).Error; err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
+
+	// Commit the transaction
+	tx.Commit()
 
 	return nil
 }
