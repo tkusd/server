@@ -25,6 +25,7 @@ type Element struct {
 	UpdatedAt  types.Time       `json:"updated_at"`
 	Attributes types.JSONObject `json:"attributes"`
 	Styles     types.JSONObject `json:"styles"`
+	Events     types.JSONArray  `json:"events"`
 	IsVisible  bool             `json:"is_visible"`
 
 	// Virtual attributes

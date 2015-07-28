@@ -89,6 +89,7 @@ type elementForm struct {
 	Type       *string           `json:"type"`
 	Attributes *types.JSONObject `json:"attributes"`
 	Styles     *types.JSONObject `json:"styles"`
+	Events     *types.JSONArray  `json:"events"`
 	Elements   *[]types.UUID     `json:"elements"`
 	IsVisible  *bool             `json:"is_visible"`
 }
@@ -99,6 +100,7 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Type:       "type",
 		&form.Attributes: "attributes",
 		&form.Styles:     "styles",
+		&form.Events:     "events",
 		&form.Elements:   "elements",
 		&form.IsVisible:  "is_visible",
 	}
@@ -119,6 +121,10 @@ func saveElement(form *elementForm, element *model.Element) error {
 
 	if form.Styles != nil {
 		element.Styles = *form.Styles
+	}
+
+	if form.Events != nil {
+		element.Events = *form.Events
 	}
 
 	if form.IsVisible != nil {
