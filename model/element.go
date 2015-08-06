@@ -18,7 +18,7 @@ type Element struct {
 	ID         types.UUID       `json:"id"`
 	ProjectID  types.UUID       `json:"project_id"`
 	ElementID  types.UUID       `json:"element_id"`
-	OrderID    int              `json:"order_id"`
+	Index      int              `json:"index"`
 	Name       string           `json:"name"`
 	Type       string           `json:"type"`
 	CreatedAt  types.Time       `json:"created_at"`
@@ -52,8 +52,8 @@ func (e *Element) BeforeCreate(tx *gorm.DB) error {
 	e.CreatedAt = types.Now()
 	lastOrder := 0
 	query := tx.Table("elements").
-		Select("order_id").
-		Order("order_id desc").
+		Select("index").
+		Order("index desc").
 		Limit(1)
 
 	if e.ElementID.Valid() {
@@ -66,7 +66,7 @@ func (e *Element) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	query.Row().Scan(&lastOrder)
-	e.OrderID = lastOrder + 1
+	e.Index = lastOrder + 1
 
 	return nil
 }
@@ -84,7 +84,7 @@ func (e *Element) BeforeDelete(tx *gorm.DB) error {
 
 	if project.MainScreen.Equal(e.ID) {
 		if err := tx.Exec(`UPDATE projects
-SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL AND id <> ? ORDER BY order_id LIMIT 1)
+SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL AND id <> ? ORDER BY index LIMIT 1)
 WHERE id = ?`, project.ID.String(), e.ID.String(), project.ID.String()).Error; err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func GetElementList(option *ElementQueryOption) ([]*Element, error) {
 		option.Select = []string{"*"}
 	} else {
 		// TODO: Add missing fields
-		//option.Select = appendIfMissing(option.Select, "id", "project_id", "element_id", "order_id")
+		//option.Select = appendIfMissing(option.Select, "id", "project_id", "element_id", "index")
 	}
 
 	for _, col := range option.Select {
@@ -208,7 +208,7 @@ WHERE elements.element_id = tree.id`
 	}
 
 	raw += `)
-SELECT * FROM tree ORDER BY depth, order_id;`
+SELECT * FROM tree ORDER BY depth, index;`
 
 	if err := db.Raw(raw, id).Find(&list).Error; err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func UpdateElementOrder(option *ElementQueryOption, elements []types.UUID) error
 	for i, elementID := range elements {
 		data := map[string]interface{}{
 			"element_id": parentID,
-			"order_id":   i + 1,
+			"index":      i + 1,
 		}
 
 		if err := tx.Table("elements").Where("id = ?", elementID.String()).UpdateColumns(data).Error; err != nil {
