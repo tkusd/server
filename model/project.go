@@ -46,15 +46,16 @@ type ProjectQueryOption struct {
 }
 
 // BeforeSave is called when the data is about to be saved.
-func (p *Project) BeforeSave() error {
+func (p *Project) BeforeSave(tx *gorm.DB) error {
 	if p.MainScreen.Valid() {
-		screen := Element{ID: p.MainScreen}
+		var exist sql.NullBool
+		tx.Raw("SELECT exists(SELECT project_id = ? FROM elements WHERE id = ?)", p.ID.String(), p.MainScreen.String()).Row().Scan(&exist)
 
-		if !screen.Exists() {
+		if !exist.Bool {
 			return &util.APIError{
 				Field:   "main_screen",
-				Code:    util.ElementNotFoundError,
-				Message: "Element not found.",
+				Code:    util.ElementNotOwnedByProjectError,
+				Message: "Element is not owned by the project.",
 			}
 		}
 	}

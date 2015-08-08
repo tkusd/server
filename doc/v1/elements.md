@@ -29,6 +29,7 @@ POST /v1/elements/:element_id/elements
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
 `is_visible` | boolean | 元素是否可見
+`index` | int | 索引編號
 
 ## 取得元素
 
@@ -49,6 +50,7 @@ GET /v1/elements/:element_id
 `updated_at` | date | 更新日期
 `attributes` | object | 屬性
 `is_visible` | boolean | 元素是否可見
+`index` | int | 索引編號
 
 ## 更新元素
 
@@ -89,14 +91,3 @@ GET /v1/elements/:element_id/elements
 --- | --- | --- | ---
 `flat` | boolean | 回傳的元素列表不以階層排列 | false
 `depth` | int | 列表的最大深度，0 代表不限制 | 0
-
-## 可用的元素類型
-
-- screen
-- text
-- layout
-- button
-- input
-- link
-- image
-- list

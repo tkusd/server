@@ -38,6 +38,7 @@ const (
 	UserForbiddenError = 1304
 	// ElementNotInTreeError        = 1305
 	// ElementTreeNotCompletedError = 1306
+	ElementNotOwnedByProjectError = 1307
 )
 
 // APIError represents an API error.

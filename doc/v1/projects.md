@@ -13,6 +13,7 @@ POST /v1/users/:user_id/projects
 `title` | string | 標題。最長為 255。| **必填**
 `description` | string | 描述 | **必填**
 `is_private` | boolean | 是否為私人專案 | false
+`theme` | string | 主題 | ios
 
 ### Response
 
@@ -26,6 +27,7 @@ POST /v1/users/:user_id/projects
 `updated_at` | date | 更新日期
 `is_private` | boolean | 是否為私人專案
 `main_screen` | uuid | 主螢幕
+`theme` | string | 主題
 
 ## 取得專案
 
@@ -45,6 +47,7 @@ GET /v1/projects/:project_id
     "updated_at": "2015-05-29T14:58:56Z",
     "is_private": false,
     "main_screen": "990edebf-dd64-4b39-b892-75718baefeb9",
+    "theme": "ios",
     "owner": {
         "id": "5e7a32d2-80c8-452f-8139-5a860522639f",
         "name": "John",
@@ -64,6 +67,7 @@ GET /v1/projects/:project_id
 `is_private` | boolean | 是否為私人專案
 `owner` | object | 擁有者
 `main_screen` | uuid | 主螢幕
+`theme` | string | 主題
 
 ## 取得專案及所有元素
 
@@ -89,6 +93,7 @@ GET /v1/projects/:project_id
 `is_private` | boolean | 是否為私人專案
 `elements` | []uuid | 子元素
 `main_screen` | uuid | 主螢幕
+`theme` | string | 主題
 
 ### Response
 
@@ -102,6 +107,7 @@ GET /v1/projects/:project_id
 `updated_at` | date | 更新日期
 `is_private` | boolean | 是否為私人專案
 `main_screen` | uuid | 主螢幕
+`theme` | string | 主題
 
 ## 刪除專案
 
@@ -140,6 +146,7 @@ GET /v1/users/:user_id/projects
         "updated_at": "2015-05-12T16:49:09Z",
         "is_private": false,
         "main_screen": "990edebf-dd64-4b39-b892-75718baefeb9",
+        "theme": "ios",
         "owner": {
             "id": "5b7758fd-a408-4e80-9b72-3ff2ebcfad94",
             "name": "John",
