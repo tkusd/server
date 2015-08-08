@@ -37,18 +37,6 @@ func (u *User) PublicProfile() map[string]interface{} {
 	}
 }
 
-// BeforeSave is called when the data is about to be saved.
-func (u *User) BeforeSave() error {
-	u.UpdatedAt = types.Now()
-	return nil
-}
-
-// BeforeCreate is called when the data is about to be created.
-func (u *User) BeforeCreate() error {
-	u.CreatedAt = types.Now()
-	return nil
-}
-
 // Save creates or updates data in the database.
 func (u *User) Save() error {
 	u.Name = govalidator.Trim(u.Name, "")

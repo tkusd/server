@@ -2,7 +2,6 @@ package model
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -41,73 +40,12 @@ type ElementQueryOption struct {
 	Select    []string
 }
 
-// BeforeSave is called when the data is about to be saved.
-func (e *Element) BeforeSave() error {
-	e.UpdatedAt = types.Now()
-	return nil
-}
-
-// BeforeCreate is called when the data is about to be created.
-func (e *Element) BeforeCreate(tx *gorm.DB) error {
-	e.CreatedAt = types.Now()
-	lastOrder := 0
-	query := tx.Table("elements").
-		Select("index").
-		Order("index desc").
-		Limit(1)
-
-	if e.ElementID.Valid() {
-		query = query.Where("element_id = ?", e.ElementID.String())
-	} else if e.ProjectID.Valid() {
-		query = query.Where("project_id = ?", e.ProjectID.String()).
-			Where("element_id is null")
-	} else {
-		return errors.New("UUID is invalid")
-	}
-
-	query.Row().Scan(&lastOrder)
-	e.Index = lastOrder + 1
-
-	return nil
-}
-
-func (e *Element) BeforeDelete(tx *gorm.DB) error {
-	if e.Type != "screen" {
-		return nil
-	}
-
-	var project Project
-
-	if err := tx.Where("id = ?", e.ProjectID.String()).Select([]string{"id", "main_screen"}).First(&project).Error; err != nil {
-		return err
-	}
-
-	if project.MainScreen.Equal(e.ID) {
-		if err := tx.Exec(`UPDATE projects
-SET main_screen = (SELECT id FROM elements WHERE project_id = ? AND element_id IS NULL AND id <> ? ORDER BY index LIMIT 1)
-WHERE id = ?`, project.ID.String(), e.ID.String(), project.ID.String()).Error; err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (e *Element) AfterCreate(tx *gorm.DB) error {
-	if e.Type != "screen" {
-		return nil
-	}
-
-	var project Project
-
-	if err := tx.Where("id = ?", e.ProjectID.String()).Select([]string{"id", "main_screen"}).First(&project).Error; err != nil {
-		return err
-	}
-
-	if !project.MainScreen.Valid() {
-		project.MainScreen = e.ID
-		tx.Model(&project).UpdateColumns(project)
-	}
+	tx.Table("elements").
+		Select("index").
+		Where("id = ?", e.ID.String()).
+		Row().
+		Scan(&e.Index)
 
 	return nil
 }

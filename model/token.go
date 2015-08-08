@@ -10,17 +10,6 @@ type Token struct {
 	UpdatedAt types.Time `json:"updated_at"`
 }
 
-// BeforeCreate is called when the data is about to be created.
-func (t *Token) BeforeCreate() error {
-	t.CreatedAt = types.Now()
-	return nil
-}
-
-func (t *Token) BeforeSave() error {
-	t.UpdatedAt = types.Now()
-	return nil
-}
-
 // Save creates or updates data in the database.
 func (t *Token) Save() error {
 	return db.Save(t).Error

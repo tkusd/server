@@ -47,8 +47,6 @@ type ProjectQueryOption struct {
 
 // BeforeSave is called when the data is about to be saved.
 func (p *Project) BeforeSave() error {
-	p.UpdatedAt = types.Now()
-
 	if p.MainScreen.Valid() {
 		screen := Element{ID: p.MainScreen}
 
@@ -61,12 +59,6 @@ func (p *Project) BeforeSave() error {
 		}
 	}
 
-	return nil
-}
-
-// BeforeCreate is called when the data is about to be created.
-func (p *Project) BeforeCreate() error {
-	p.CreatedAt = types.Now()
 	return nil
 }
 
