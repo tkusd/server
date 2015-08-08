@@ -11,6 +11,7 @@ const (
 	projectIDParam = "project_id"
 	elementIDParam = "element_id"
 	tokenIDParam   = "token_id"
+	assetIDParam   = "asset_id"
 )
 
 // URL patterns
@@ -26,6 +27,8 @@ const (
 	childElementCollectionURL = elementSingularURL + "/elements"
 	tokenCollectionURL        = "/tokens"
 	tokenSingularURL          = "/tokens/:" + tokenIDParam
+	assetCollectionURL        = projectSingularURL + "/assets"
+	assetSingularURL          = "/assets/:" + assetIDParam
 )
 
 // Router returns a http.Handler.
@@ -55,4 +58,10 @@ func Router(r *gin.RouterGroup) {
 	r.POST(tokenCollectionURL, common.Wrap(TokenCreate))
 	r.PUT(tokenSingularURL, common.Wrap(TokenUpdate))
 	r.DELETE(tokenSingularURL, common.Wrap(TokenDestroy))
+
+	r.GET(assetCollectionURL, CheckProjectExist, common.Wrap(AssetList))
+	r.POST(assetCollectionURL, CheckProjectExist, common.Wrap(AssetCreate))
+	r.GET(assetSingularURL, CheckAssetExist, common.Wrap(AssetShow))
+	r.PUT(assetSingularURL, common.Wrap(AssetUpdate))
+	r.DELETE(assetSingularURL, common.Wrap(AssetDestroy))
 }

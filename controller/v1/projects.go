@@ -242,11 +242,19 @@ func ProjectFull(c *gin.Context) error {
 		return err
 	}
 
+	assets, err := model.GetAssetList(project.ID)
+
+	if err != nil {
+		return err
+	}
+
 	return common.APIResponse(c, http.StatusOK, struct {
 		*model.Project
 		Elements []*model.Element `json:"elements"`
+		Assets   []*model.Asset   `json:"assets"`
 	}{
 		Project:  project,
 		Elements: elements,
+		Assets:   assets,
 	})
 }

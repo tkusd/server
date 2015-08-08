@@ -27,6 +27,7 @@ const (
 	TokenNotFoundError   = 1201
 	ProjectNotFoundError = 1202
 	ElementNotFoundError = 1203
+	AssetNotFound        = 1204
 )
 
 // 1300: Data error

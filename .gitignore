@@ -4,3 +4,4 @@
 build/
 Godeps/*
 !Godeps/Godeps.json
+uploads/

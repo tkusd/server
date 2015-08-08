@@ -249,3 +249,43 @@ func CheckElementExist(c *gin.Context) {
 		Status:  http.StatusNotFound,
 	})
 }
+
+func GetAsset(c *gin.Context) (*model.Asset, error) {
+	id, err := GetIDParam(c, assetIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if asset, err := model.GetAsset(*id); err == nil {
+		return asset, nil
+	}
+
+	return nil, &util.APIError{
+		Code:    util.AssetNotFound,
+		Message: "Asset not found.",
+		Status:  http.StatusNotFound,
+	}
+}
+
+func CheckAssetExist(c *gin.Context) {
+	id, err := GetIDParam(c, assetIDParam)
+
+	if err != nil {
+		common.HandleAPIError(c, err)
+		return
+	}
+
+	asset := &model.Asset{ID: *id}
+
+	if asset.Exists() {
+		c.Next()
+		return
+	}
+
+	common.HandleAPIError(c, &util.APIError{
+		Code:    util.AssetNotFound,
+		Message: "Asset not found.",
+		Status:  http.StatusNotFound,
+	})
+}

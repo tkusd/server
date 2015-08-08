@@ -15,6 +15,7 @@
 - [驗證](v1/tokens.md)
 - [專案](v1/projects.md)
 - [元素](v1/elements.md)
+- [Asset](v1/assets.md)
 
 ## JSON-P
 
@@ -75,6 +76,7 @@ foo({
 - 1201: 找不到 Token
 - 1202: 找不到專案
 - 1203: 找不到元素
+- 1204: 找不到 Asset
 
 ### 1300: 資料錯誤
 
