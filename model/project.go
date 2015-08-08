@@ -19,6 +19,7 @@ type Project struct {
 	UpdatedAt   types.Time `json:"updated_at"`
 	IsPrivate   bool       `json:"is_private"`
 	MainScreen  types.UUID `json:"main_screen"`
+	Theme       string     `json:"theme"`
 
 	// Virtual attributes
 	Owner struct {
@@ -128,6 +129,7 @@ func generateProjectWithOwnerQuery() *gorm.DB {
 		"projects.updated_at",
 		"projects.is_private",
 		"projects.main_screen",
+		"projects.theme",
 		"users.id",
 		"users.name",
 		"users.avatar",
@@ -151,6 +153,7 @@ func scanProjectsWithOwner(rows *sql.Rows) ([]*Project, error) {
 			&project.UpdatedAt,
 			&project.IsPrivate,
 			&project.MainScreen,
+			&project.Theme,
 			&project.Owner.ID,
 			&project.Owner.Name,
 			&project.Owner.Avatar,

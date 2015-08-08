@@ -61,6 +61,7 @@ type projectForm struct {
 	IsPrivate   *bool         `json:"is_private"`
 	Elements    *[]types.UUID `json:"elements"`
 	MainScreen  *types.UUID   `json:"main_screen"`
+	Theme       *string       `json:"theme"`
 }
 
 func (form *projectForm) FieldMap() binding.FieldMap {
@@ -70,6 +71,7 @@ func (form *projectForm) FieldMap() binding.FieldMap {
 		&form.IsPrivate:   "is_private",
 		&form.Elements:    "elements",
 		&form.MainScreen:  "main_screen",
+		&form.Theme:       "theme",
 	}
 }
 
@@ -84,6 +86,10 @@ func saveProject(form *projectForm, project *model.Project) error {
 
 	if form.IsPrivate != nil {
 		project.IsPrivate = *form.IsPrivate
+	}
+
+	if form.Theme != nil {
+		project.Theme = *form.Theme
 	}
 
 	return project.Save()
