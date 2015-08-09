@@ -29,6 +29,8 @@ const (
 	tokenSingularURL          = "/tokens/:" + tokenIDParam
 	assetCollectionURL        = projectSingularURL + "/assets"
 	assetSingularURL          = "/assets/:" + assetIDParam
+	collaboratorCollectionURL = projectSingularURL + "/collaborators"
+	collaboratorSingularURL   = collaboratorCollectionURL + "/:" + userIDParam
 )
 
 // Router returns a http.Handler.
