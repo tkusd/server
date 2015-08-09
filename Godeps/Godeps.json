@@ -36,8 +36,8 @@
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
-			"Comment": "v1.0rc1-130-g9bab006",
-			"Rev": "9bab0067762b990d53992ca469d43a5a08e727a0"
+			"Comment": "v1.0rc1-136-gfd5d429",
+			"Rev": "fd5d4294a5d5223d55fc76d7840f4b0ad91647bb"
 		},
 		{
 			"ImportPath": "github.com/go-sql-driver/mysql",
