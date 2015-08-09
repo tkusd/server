@@ -18,6 +18,23 @@ POST /v1/elements/:element_id/elements
 
 ### Response
 
+``` js
+{
+    "id": "eddc9f25-04fc-4ab1-a060-c3f42b77454d",
+    "project_id": "a5de8ca0-21b8-477a-b8bd-123dbbdb2d17",
+    "element_id": null,
+    "index": 1,
+    "name": "Home",
+    "type": "screen",
+    "created_at": "2015-08-08T09:56:00Z",
+    "updated_at": "2015-08-08T09:56:00Z",
+    "attributes": {},
+    "styles": {},
+    "events": [],
+    "is_visible": true
+}
+```
+
 名稱 | 型別 | 說明
 --- | --- | ---
 `id` | uuid | ID
@@ -38,6 +55,23 @@ GET /v1/elements/:element_id
 ```
 
 ### Response
+
+``` js
+{
+    "id": "eddc9f25-04fc-4ab1-a060-c3f42b77454d",
+    "project_id": "a5de8ca0-21b8-477a-b8bd-123dbbdb2d17",
+    "element_id": null,
+    "index": 1,
+    "name": "Home",
+    "type": "screen",
+    "created_at": "2015-08-08T09:56:00Z",
+    "updated_at": "2015-08-08T09:56:00Z",
+    "attributes": {},
+    "styles": {},
+    "events": [],
+    "is_visible": true
+}
+```
 
 名稱 | 型別 | 說明
 --- | --- | ---

@@ -18,7 +18,7 @@ func Logger(c *gin.Context) {
 			"method":   c.Request.Method,
 			"code":     c.Writer.Status(),
 			"ip":       c.ClientIP(),
-		}).Info(c.Request.URL)
+		}).Info(c.Request.RequestURI)
 	}()
 
 	c.Next()
