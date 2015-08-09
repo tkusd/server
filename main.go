@@ -1,10 +1,11 @@
 package main
 
 import (
-	"net/http"
+	"time"
 
 	"github.com/tkusd/server/controller"
 	"github.com/tkusd/server/util"
+	"gopkg.in/tylerb/graceful.v1"
 )
 
 func main() {
@@ -13,5 +14,5 @@ func main() {
 	addr := ":3000"
 
 	log.Infof("Listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, r))
+	graceful.Run(addr, 10*time.Second, r)
 }

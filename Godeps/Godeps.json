@@ -31,10 +31,6 @@
 			"Rev": "0aac9dbd861b4831f39f1fd306a8191ae27acc01"
 		},
 		{
-			"ImportPath": "github.com/gin-gonic/contrib/gzip",
-			"Rev": "915fc6822dbf9137dafbd7f65cd7a58f5260d35b"
-		},
-		{
 			"ImportPath": "github.com/gin-gonic/gin",
 			"Comment": "v1.0rc1-136-gfd5d429",
 			"Rev": "fd5d4294a5d5223d55fc76d7840f4b0ad91647bb"
@@ -98,9 +94,18 @@
 			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
 		},
 		{
+			"ImportPath": "golang.org/x/net/netutil",
+			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+		},
+		{
 			"ImportPath": "gopkg.in/bluesuncorp/validator.v5",
 			"Comment": "v5.10.1",
 			"Rev": "06aac46c918960c01a241888042fc5e4e922b899"
+		},
+		{
+			"ImportPath": "gopkg.in/tylerb/graceful.v1",
+			"Comment": "v1.2.1",
+			"Rev": "ac9ebe4f1ee151ac1eeeaef32957085cba64d508"
 		}
 	]
 }
