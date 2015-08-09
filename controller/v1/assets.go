@@ -2,6 +2,7 @@ package v1
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -119,6 +120,8 @@ func saveAsset(form *assetForm, asset *model.Asset) error {
 		asset.Slug = types.NewRandomUUID().String() + extname
 		uploadPath := util.GetUploadFilePath(asset.Slug)
 		file, err := os.Create(uploadPath)
+		h := sha1.New()
+		writer := io.MultiWriter(file, h)
 
 		if err != nil {
 			return err
@@ -126,9 +129,11 @@ func saveAsset(form *assetForm, asset *model.Asset) error {
 
 		defer file.Close()
 
-		if _, err := buf.WriteTo(file); err != nil {
+		if _, err := buf.WriteTo(writer); err != nil {
 			return err
 		}
+
+		asset.Hash = h.Sum(nil)
 	}
 
 	return asset.Save()

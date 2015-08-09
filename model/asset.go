@@ -20,6 +20,7 @@ type Asset struct {
 	Slug        string     `json:"slug"`
 	Width       int        `json:"width,omitempty"`
 	Height      int        `json:"height,omitempty"`
+	Hash        types.Hash `json:"hash"`
 }
 
 func (asset *Asset) Save() error {
