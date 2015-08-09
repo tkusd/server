@@ -1,11 +1,11 @@
 package main
 
 import (
-	"time"
+	"net/http"
 
+	"github.com/facebookgo/grace/gracehttp"
 	"github.com/tkusd/server/controller"
 	"github.com/tkusd/server/util"
-	"gopkg.in/tylerb/graceful.v1"
 )
 
 func main() {
@@ -14,5 +14,8 @@ func main() {
 	addr := ":3000"
 
 	log.Infof("Listening on %s", addr)
-	graceful.Run(addr, 10*time.Second, r)
+	gracehttp.Serve(&http.Server{
+		Addr:    addr,
+		Handler: r,
+	})
 }
