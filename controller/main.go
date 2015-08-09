@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"github.com/gin-gonic/contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/controller/v1"
@@ -14,7 +13,6 @@ func Router() *gin.Engine {
 
 	g.Use(common.Recovery)
 	g.Use(common.Logger)
-	g.Use(gzip.Gzip(gzip.DefaultCompression))
 	g.Use(cors.Middleware(cors.Options{}))
 	g.GET("/", Home)
 	v1.Router(g.Group("/v1"))

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -10,8 +11,8 @@ import (
 // RenderJSON renders JSON and add corresponding header to the response.
 func RenderJSON(c *gin.Context, status int, value interface{}) error {
 	if result, err := json.Marshal(value); err == nil {
-		c.Writer.WriteHeader(status)
 		c.Header("Content-Type", "application/json; charset=utf-8")
+		c.Writer.WriteHeader(status)
 		c.Writer.Write(result)
 	} else {
 		return err
@@ -38,15 +39,17 @@ func RenderJSONP(c *gin.Context, status int, callback string, value interface{})
 		Data: &value,
 	}
 
-	// c.Writer.WriteString(callback + "(")
-
 	if result, err := json.Marshal(data); err == nil {
-		result = append([]byte(callback+"("), result...)
-		result = append(result, ')')
+		buf := bytes.Buffer{}
 
-		c.Writer.WriteHeader(http.StatusOK)
+		buf.WriteString(callback)
+		buf.WriteRune('(')
+		buf.Write(result)
+		buf.WriteRune(')')
+
 		c.Header("Content-Type", "application/javascript; charset=utf-8")
-		c.Writer.Write(result)
+		c.Writer.WriteHeader(http.StatusOK)
+		buf.WriteTo(c.Writer)
 	} else {
 		return err
 	}
