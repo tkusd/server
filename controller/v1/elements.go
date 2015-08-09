@@ -233,6 +233,7 @@ func ElementUpdate(c *gin.Context) error {
 
 	if form.Elements != nil {
 		option := &model.ElementQueryOption{
+			ProjectID: &element.ProjectID,
 			ElementID: &element.ID,
 		}
 
