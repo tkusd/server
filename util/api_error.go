@@ -28,6 +28,8 @@ const (
 	ProjectNotFoundError = 1202
 	ElementNotFoundError = 1203
 	AssetNotFound        = 1204
+	ActionNotFound       = 1205
+	EventNotFound        = 1206
 )
 
 // 1300: Data error
@@ -40,6 +42,7 @@ const (
 	// ElementNotInTreeError        = 1305
 	// ElementTreeNotCompletedError = 1306
 	ElementNotOwnedByProjectError = 1307
+	ActionNotOwnedByProjectError  = 1308
 )
 
 // APIError represents an API error.

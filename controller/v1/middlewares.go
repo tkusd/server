@@ -289,3 +289,39 @@ func CheckAssetExist(c *gin.Context) {
 		Status:  http.StatusNotFound,
 	})
 }
+
+func GetAction(c *gin.Context) (*model.Action, error) {
+	id, err := GetIDParam(c, actionIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if action, err := model.GetAction(*id); err == nil {
+		return action, nil
+	}
+
+	return nil, &util.APIError{
+		Code:    util.ActionNotFound,
+		Message: "Action not found.",
+		Status:  http.StatusNotFound,
+	}
+}
+
+func GetEvent(c *gin.Context) (*model.Event, error) {
+	id, err := GetIDParam(c, eventIDParam)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if action, err := model.GetEvent(*id); err == nil {
+		return action, nil
+	}
+
+	return nil, &util.APIError{
+		Code:    util.EventNotFound,
+		Message: "Action not found.",
+		Status:  http.StatusNotFound,
+	}
+}

@@ -254,3 +254,9 @@ func GetProjectWithOwner(id types.UUID) (*Project, error) {
 
 	return projects[0], nil
 }
+
+func GetUserIDForProject(projectID types.UUID) types.UUID {
+	var userID types.UUID
+	db.Raw("SELECT user_id FROM projects WHERE id = ?", projectID.String()).Row().Scan(&userID)
+	return userID
+}

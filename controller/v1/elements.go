@@ -89,7 +89,6 @@ type elementForm struct {
 	Type       *string           `json:"type"`
 	Attributes *types.JSONObject `json:"attributes"`
 	Styles     *types.JSONObject `json:"styles"`
-	Events     *types.JSONArray  `json:"events"`
 	Elements   *[]types.UUID     `json:"elements"`
 	IsVisible  *bool             `json:"is_visible"`
 }
@@ -100,7 +99,6 @@ func (form *elementForm) FieldMap() binding.FieldMap {
 		&form.Type:       "type",
 		&form.Attributes: "attributes",
 		&form.Styles:     "styles",
-		&form.Events:     "events",
 		&form.Elements:   "elements",
 		&form.IsVisible:  "is_visible",
 	}
@@ -121,10 +119,6 @@ func saveElement(form *elementForm, element *model.Element) error {
 
 	if form.Styles != nil {
 		element.Styles = *form.Styles
-	}
-
-	if form.Events != nil {
-		element.Events = *form.Events
 	}
 
 	if form.IsVisible != nil {
@@ -165,13 +159,15 @@ func ElementCreate(c *gin.Context) error {
 }
 
 func ChildElementCreate(c *gin.Context) error {
-	parent, err := GetElement(c)
+	parentID, err := GetIDParam(c, elementIDParam)
 
 	if err != nil {
 		return err
 	}
 
-	if err := CheckProjectPermission(c, parent.ProjectID, true); err != nil {
+	projectID := model.GetProjectIDForElement(*parentID)
+
+	if err := CheckProjectPermission(c, projectID, true); err != nil {
 		return err
 	}
 
@@ -182,8 +178,8 @@ func ChildElementCreate(c *gin.Context) error {
 	}
 
 	element := &model.Element{
-		ProjectID: parent.ProjectID,
-		ElementID: parent.ID,
+		ProjectID: projectID,
+		ElementID: *parentID,
 		IsVisible: true,
 	}
 
@@ -274,6 +270,7 @@ func ElementFull(c *gin.Context) error {
 
 	option := parseElementListQueryOption(c)
 	option.ElementID = &element.ID
+	option.WithEvents = true
 
 	if err := CheckProjectPermission(c, element.ProjectID, false); err != nil {
 		return err

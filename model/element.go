@@ -24,20 +24,21 @@ type Element struct {
 	UpdatedAt  types.Time       `json:"updated_at"`
 	Attributes types.JSONObject `json:"attributes"`
 	Styles     types.JSONObject `json:"styles"`
-	Events     types.JSONArray  `json:"events"`
 	IsVisible  bool             `json:"is_visible"`
 
 	// Virtual attributes
 	Elements []*Element `json:"elements,omitempty" sql:"-"`
+	Events   []*Event   `json:"events,omitempty" sql:"-"`
 }
 
 // ElementQueryOption is the query option for elements.
 type ElementQueryOption struct {
-	ProjectID *types.UUID
-	ElementID *types.UUID
-	Flat      bool
-	Depth     uint
-	Select    []string
+	ProjectID  *types.UUID
+	ElementID  *types.UUID
+	Flat       bool
+	Depth      uint
+	Select     []string
+	WithEvents bool
 }
 
 func (e *Element) AfterCreate(tx *gorm.DB) error {
@@ -156,6 +157,35 @@ SELECT * FROM tree ORDER BY depth, index;`
 		list = make([]*Element, 0)
 	}
 
+	if option.WithEvents {
+		var events []*Event
+
+		err := db.Select([]string{
+			"events.id",
+			"events.element_id",
+			"events.action_id",
+			"events.event",
+			"events.created_at",
+			"events.updated_at",
+		}).
+			Joins("JOIN elements ON events.element_id = elements.id").
+			Where("project_id = ?", option.ProjectID.String()).
+			Find(&events).
+			Error
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, event := range events {
+			for _, element := range list {
+				if event.ElementID.Equal(element.ID) {
+					element.Events = append(element.Events, event)
+				}
+			}
+		}
+	}
+
 	if option.Flat {
 		return list, nil
 	}
@@ -221,4 +251,10 @@ func UpdateElementOrder(option *ElementQueryOption, elements []types.UUID) error
 	tx.Commit()
 
 	return nil
+}
+
+func GetProjectIDForElement(elementID types.UUID) types.UUID {
+	var projectID types.UUID
+	db.Raw("SELECT project_id FROM elements WHERE id = ?", elementID.String()).Row().Scan(&projectID)
+	return projectID
 }

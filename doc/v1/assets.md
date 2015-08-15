@@ -1,6 +1,6 @@
-# Asset
+# 資源
 
-## 建立 Asset
+## 建立資源
 
 ```
 POST /v1/projects/:project_id/assets
@@ -38,6 +38,7 @@ POST /v1/projects/:project_id/assets
 `id` | uuid | ID
 `name` | string | 名稱
 `description` | string | 描述
+`project_id` | uuid | 專案 ID
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
@@ -47,7 +48,7 @@ POST /v1/projects/:project_id/assets
 `height` | int | 圖片高度
 `hash` | string | SHA1 Hash
 
-## 取得 Asset
+## 取得資源
 
 ```
 GET /v1/assets/:asset_id
@@ -77,6 +78,7 @@ GET /v1/assets/:asset_id
 `id` | uuid | ID
 `name` | string | 名稱
 `description` | string | 描述
+`project_id` | uuid | 專案 ID
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
@@ -88,7 +90,7 @@ GET /v1/assets/:asset_id
 
 ### 圖片網址
 
-Slug 和 Asset ID 沒有關聯性，只是在上傳圖片時隨機產生的 UUID 加上副檔名。
+Slug 和資源 ID 沒有關聯性，只是在上傳圖片時隨機產生的 UUID 加上副檔名。
 
 ```
 /uploads/assets/:slug
@@ -132,6 +134,7 @@ PUT /v1/assets/:asset_id
 `id` | uuid | ID
 `name` | string | 名稱
 `description` | string | 描述
+`project_id` | uuid | 專案 ID
 `created_at` | date | 建立日期
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
@@ -141,13 +144,13 @@ PUT /v1/assets/:asset_id
 `height` | int | 圖片高度
 `hash` | string | SHA1 Hash
 
-## 刪除 Asset
+## 刪除資源
 
 ```
 DELETE /v1/assets/:asset_id
 ```
 
-## 取得 Asset 列表
+## 取得資源列表
 
 ```
 GET /v1/projects/:project_id/assets

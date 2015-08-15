@@ -12,25 +12,38 @@ const (
 	elementIDParam = "element_id"
 	tokenIDParam   = "token_id"
 	assetIDParam   = "asset_id"
+	actionIDParam  = "action_id"
+	eventIDParam   = "event_id"
 )
 
 // URL patterns
 const (
-	userCollectionURL         = "/users"
-	userSingularURL           = "/users/:" + userIDParam
-	projectCollectionURL      = userSingularURL + "/projects"
-	projectSingularURL        = "/projects/:" + projectIDParam
-	projectFullURL            = projectSingularURL + "/full"
+	userCollectionURL = "/users"
+	userSingularURL   = "/users/:" + userIDParam
+
+	projectCollectionURL = userSingularURL + "/projects"
+	projectSingularURL   = "/projects/:" + projectIDParam
+	projectFullURL       = projectSingularURL + "/full"
+
 	elementCollectionURL      = projectSingularURL + "/elements"
 	elementSingularURL        = "/elements/:" + elementIDParam
 	elementFullURL            = elementSingularURL + "/full"
 	childElementCollectionURL = elementSingularURL + "/elements"
-	tokenCollectionURL        = "/tokens"
-	tokenSingularURL          = "/tokens/:" + tokenIDParam
-	assetCollectionURL        = projectSingularURL + "/assets"
-	assetSingularURL          = "/assets/:" + assetIDParam
+
+	tokenCollectionURL = "/tokens"
+	tokenSingularURL   = "/tokens/:" + tokenIDParam
+
+	assetCollectionURL = projectSingularURL + "/assets"
+	assetSingularURL   = "/assets/:" + assetIDParam
+
 	collaboratorCollectionURL = projectSingularURL + "/collaborators"
 	collaboratorSingularURL   = collaboratorCollectionURL + "/:" + userIDParam
+
+	actionCollectionURL = projectSingularURL + "/actions"
+	actionSingularURL   = "/actions/:" + actionIDParam
+
+	eventCollectionURL = elementSingularURL + "/events"
+	eventSingularURL   = "/events/:" + eventIDParam
 )
 
 // Router returns a http.Handler.
@@ -42,7 +55,7 @@ func Router(r *gin.RouterGroup) {
 
 	r.GET(projectCollectionURL, CheckUserExist, common.Wrap(ProjectList))
 	r.POST(projectCollectionURL, CheckUserExist, common.Wrap(ProjectCreate))
-	r.GET(projectSingularURL, CheckProjectExist, common.Wrap(ProjectShow))
+	r.GET(projectSingularURL, common.Wrap(ProjectShow))
 	r.PUT(projectSingularURL, common.Wrap(ProjectUpdate))
 	r.DELETE(projectSingularURL, common.Wrap(ProjectDestroy))
 	r.GET(projectFullURL, common.Wrap(ProjectFull))
@@ -63,7 +76,19 @@ func Router(r *gin.RouterGroup) {
 
 	r.GET(assetCollectionURL, CheckProjectExist, common.Wrap(AssetList))
 	r.POST(assetCollectionURL, CheckProjectExist, common.Wrap(AssetCreate))
-	r.GET(assetSingularURL, CheckAssetExist, common.Wrap(AssetShow))
+	r.GET(assetSingularURL, common.Wrap(AssetShow))
 	r.PUT(assetSingularURL, common.Wrap(AssetUpdate))
 	r.DELETE(assetSingularURL, common.Wrap(AssetDestroy))
+
+	r.GET(actionCollectionURL, CheckProjectExist, common.Wrap(ActionList))
+	r.POST(actionCollectionURL, CheckProjectExist, common.Wrap(ActionCreate))
+	r.GET(actionSingularURL, common.Wrap(ActionShow))
+	r.PUT(actionSingularURL, common.Wrap(ActionUpdate))
+	r.DELETE(actionSingularURL, common.Wrap(ActionDestroy))
+
+	r.GET(eventCollectionURL, CheckElementExist, common.Wrap(EventList))
+	r.POST(eventCollectionURL, CheckElementExist, common.Wrap(EventCreate))
+	r.GET(eventSingularURL, common.Wrap(EventShow))
+	r.PUT(eventSingularURL, common.Wrap(EventUpdate))
+	r.DELETE(eventSingularURL, common.Wrap(EventDestroy))
 }
