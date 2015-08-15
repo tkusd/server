@@ -1,13 +1,12 @@
 package model
 
 import (
-	"database/sql"
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
@@ -79,7 +78,25 @@ func (e *Element) Save() error {
 		e.Styles = map[string]interface{}{}
 	}
 
-	return db.Save(e).Error
+	err := db.Save(e).Error
+
+	if err == nil {
+		return nil
+	}
+
+	switch e := err.(type) {
+	case *pq.Error:
+		switch e.Code.Name() {
+		case ForeignKeyViolation:
+			return &util.APIError{
+				Code:    util.ElementNotOwnedByProjectError,
+				Message: "The parent element is not owned by the project.",
+				Field:   "element_id",
+			}
+		}
+	}
+
+	return err
 }
 
 // Delete deletes data from the database.
@@ -211,25 +228,8 @@ func buildElementTree(list []*Element, parentID types.UUID) []*Element {
 }
 
 func UpdateElementOrder(option *ElementQueryOption, elements []types.UUID) error {
-	// Check whether all elements are owned by the same project
-	projectID := *option.ProjectID
-	tx := db.Begin()
-
-	for _, elementID := range elements {
-		var exist sql.NullBool
-		tx.Raw("SELECT exists(SELECT 1 FROM elements WHERE id = ? AND project_id = ?)", elementID.String(), projectID.String()).Row().Scan(&exist)
-
-		if !exist.Bool {
-			tx.Rollback()
-			return &util.APIError{
-				Code:    util.ElementNotFoundError,
-				Message: fmt.Sprintf("Element %s does not exist or is not the children of project %s", elementID.String(), projectID.String()),
-			}
-		}
-	}
-
-	// Start updating the order of elements
 	var parentID types.UUID
+	tx := db.Begin()
 
 	if option.ElementID != nil {
 		parentID = *option.ElementID
@@ -243,6 +243,18 @@ func UpdateElementOrder(option *ElementQueryOption, elements []types.UUID) error
 
 		if err := tx.Table("elements").Where("id = ?", elementID.String()).UpdateColumns(data).Error; err != nil {
 			tx.Rollback()
+
+			switch e := err.(type) {
+			case *pq.Error:
+				switch e.Code.Name() {
+				case ForeignKeyViolation:
+					return &util.APIError{
+						Code:    util.ElementNotOwnedByProjectError,
+						Message: "Elements is not owned by the project.",
+					}
+				}
+			}
+
 			return err
 		}
 	}

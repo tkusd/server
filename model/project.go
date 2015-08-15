@@ -5,6 +5,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
@@ -45,24 +46,6 @@ type ProjectQueryOption struct {
 	WithOwner bool
 }
 
-// BeforeSave is called when the data is about to be saved.
-func (p *Project) BeforeSave(tx *gorm.DB) error {
-	if p.MainScreen.Valid() {
-		var exist sql.NullBool
-		tx.Raw("SELECT exists(SELECT project_id = ? FROM elements WHERE id = ?)", p.ID.String(), p.MainScreen.String()).Row().Scan(&exist)
-
-		if !exist.Bool {
-			return &util.APIError{
-				Field:   "main_screen",
-				Code:    util.ElementNotOwnedByProjectError,
-				Message: "Element is not owned by the project.",
-			}
-		}
-	}
-
-	return nil
-}
-
 // Save creates or updates data in the database.
 func (p *Project) Save() error {
 	p.Title = govalidator.Trim(p.Title, "")
@@ -84,6 +67,17 @@ func (p *Project) Save() error {
 	}
 
 	if err := db.Save(p).Error; err != nil {
+		switch e := err.(type) {
+		case *pq.Error:
+			switch e.Code.Name() {
+			case ForeignKeyViolation:
+				return &util.APIError{
+					Code:    util.ElementNotOwnedByProjectError,
+					Message: "Main screen is not owned by the project.",
+					Field:   "main_screen",
+				}
+			}
+		}
 		return err
 	}
 

@@ -1,9 +1,7 @@
 package model
 
 import (
-	"database/sql"
-
-	"github.com/jinzhu/gorm"
+	"github.com/lib/pq"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
@@ -15,23 +13,6 @@ type Event struct {
 	Event     string     `json:"event"`
 	CreatedAt types.Time `json:"created_at"`
 	UpdatedAt types.Time `json:"updated_at"`
-}
-
-func (event *Event) BeforeSave(tx *gorm.DB) error {
-	projectID := GetProjectIDForElement(event.ElementID)
-
-	var exist sql.NullBool
-	tx.Raw("SELECT exists(SELECT project_id = ? FROM actions WHERE id = ?)", projectID.String(), event.ActionID.String()).Row().Scan(&exist)
-
-	if !exist.Bool {
-		return &util.APIError{
-			Field:   "action_id",
-			Code:    util.ActionNotOwnedByProjectError,
-			Message: "Action is not owned by the project.",
-		}
-	}
-
-	return nil
 }
 
 func (event *Event) Save() error {
@@ -51,7 +32,25 @@ func (event *Event) Save() error {
 		}
 	}
 
-	return db.Save(event).Error
+	err := db.Save(event).Error
+
+	if err != nil {
+		return nil
+	}
+
+	switch e := err.(type) {
+	case *pq.Error:
+		switch e.Code.Name() {
+		case ForeignKeyViolation:
+			return &util.APIError{
+				Code:    util.ActionNotOwnedByProjectError,
+				Message: "Action is not owned by the project.",
+				Field:   "action_id",
+			}
+		}
+	}
+
+	return err
 }
 
 func (event *Event) Delete() error {
