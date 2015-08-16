@@ -34,7 +34,7 @@ func (event *Event) Save() error {
 
 	err := db.Save(event).Error
 
-	if err != nil {
+	if err == nil {
 		return nil
 	}
 

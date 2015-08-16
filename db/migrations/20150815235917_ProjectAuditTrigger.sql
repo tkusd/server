@@ -4,7 +4,7 @@
 CREATE OR REPLACE FUNCTION projects_check_main_screen() RETURNS TRIGGER AS $$
 BEGIN
   -- Do nothing if main_screen is same
-  IF OLD IS NOT NULL AND NEW.main_screen = OLD.main_screen THEN
+  IF TG_OP = 'UPDATE' AND NEW.main_screen = OLD.main_screen THEN
     RETURN NEW;
   END IF;
 
@@ -29,7 +29,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION events_check_action_id() RETURNS TRIGGER AS $$
 BEGIN
   -- Do nothing if action_id is same
-  IF OLD IS NOT NULL AND NEW.action_id = OLD.action_id THEN
+  IF TG_OP = 'UPDATE' AND NEW.action_id = OLD.action_id THEN
     RETURN NEW;
   END IF;
 
@@ -64,7 +64,7 @@ BEGIN
   END IF;
 
   -- Do nothing if element_id is same
-  IF OLD IS NOT NULL AND NEW.element_id = OLD.element_id THEN
+  IF TG_OP = 'UPDATE' AND NEW.element_id = OLD.element_id THEN
     RETURN NEW;
   END IF;
 
