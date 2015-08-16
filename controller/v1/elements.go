@@ -270,6 +270,7 @@ func ElementFull(c *gin.Context) error {
 
 	option := parseElementListQueryOption(c)
 	option.ElementID = &element.ID
+	option.ProjectID = &element.ProjectID
 	option.WithEvents = true
 
 	if err := CheckProjectPermission(c, element.ProjectID, false); err != nil {
