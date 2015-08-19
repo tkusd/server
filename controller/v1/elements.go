@@ -283,11 +283,19 @@ func ElementFull(c *gin.Context) error {
 		return err
 	}
 
+	events, err := model.GetEventList(element.ID)
+
+	if err != nil {
+		return err
+	}
+
 	return common.APIResponse(c, http.StatusOK, struct {
 		*model.Element
 		Elements []*model.Element `json:"elements"`
+		Events   []*model.Event   `json:"events"`
 	}{
 		Element:  element,
 		Elements: list,
+		Events:   events,
 	})
 }
