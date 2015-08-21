@@ -67,6 +67,14 @@ func saveAsset(form *assetForm, asset *model.Asset) error {
 	if form.Data != nil {
 		var err error
 
+		if asset.Slug != "" {
+			filepath := util.GetUploadFilePath(asset.Slug)
+
+			if err = os.Remove(filepath); err != nil {
+				return err
+			}
+		}
+
 		// Set the asset name
 		if form.Name == nil && !asset.ID.Valid() {
 			if asset.Name, err = url.QueryUnescape(form.Data.Filename); err != nil {
@@ -229,5 +237,22 @@ func AssetDestroy(c *gin.Context) error {
 	}
 
 	c.Writer.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
+func AssetBlob(c *gin.Context) error {
+	asset, err := GetAsset(c)
+
+	if err != nil {
+		return err
+	}
+
+	if err := CheckProjectPermission(c, asset.ProjectID, false); err != nil {
+		return err
+	}
+
+	path := util.GetUploadFilePath(asset.Slug)
+	http.ServeFile(c.Writer, c.Request, path)
+
 	return nil
 }

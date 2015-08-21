@@ -17,7 +17,7 @@ type Asset struct {
 	UpdatedAt   types.Time `json:"updated_at"`
 	Size        int64      `json:"size"`
 	Type        string     `json:"type"`
-	Slug        string     `json:"slug"`
+	Slug        string     `json:"-"`
 	Width       int        `json:"width,omitempty"`
 	Height      int        `json:"height,omitempty"`
 	Hash        types.Hash `json:"hash"`

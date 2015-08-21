@@ -26,7 +26,6 @@ POST /v1/projects/:project_id/assets
     "updated_at": "2015-08-09T02:23:19Z",
     "size": 106840,
     "type": "image/png",
-    "slug": "2bdb7769-be94-47f1-8621-d7ae9e4d440b.png",
     "width": 570,
     "height": 451,
     "hash": "0d3cb384ecd3b445110278e1c4028058e1aa27fd"
@@ -43,7 +42,6 @@ POST /v1/projects/:project_id/assets
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
 `type` | string | MIME 類型
-`slug` | string | 網址的檔案名稱
 `width` | int | 圖片寬度
 `height` | int | 圖片高度
 `hash` | string | SHA1 Hash
@@ -66,7 +64,6 @@ GET /v1/assets/:asset_id
     "updated_at": "2015-08-09T02:23:19Z",
     "size": 106840,
     "type": "image/png",
-    "slug": "2bdb7769-be94-47f1-8621-d7ae9e4d440b.png",
     "width": 570,
     "height": 451,
     "hash": "0d3cb384ecd3b445110278e1c4028058e1aa27fd"
@@ -83,20 +80,17 @@ GET /v1/assets/:asset_id
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
 `type` | string | MIME 類型
-`slug` | string | 網址的檔案名稱
 `width` | int | 圖片寬度
 `height` | int | 圖片高度
 `hash` | string | SHA1 Hash
 
-### 圖片網址
-
-Slug 和資源 ID 沒有關聯性，只是在上傳圖片時隨機產生的 UUID 加上副檔名。
+## 取得原始檔案
 
 ```
-/uploads/assets/:slug
+GET /v1/assets/:asset_id/blob
 ```
 
-## 更新使用者
+## 更新資源
 
 ```
 PUT /v1/assets/:asset_id
@@ -122,7 +116,6 @@ PUT /v1/assets/:asset_id
     "updated_at": "2015-08-09T02:23:19Z",
     "size": 106840,
     "type": "image/png",
-    "slug": "2bdb7769-be94-47f1-8621-d7ae9e4d440b.png",
     "width": 570,
     "height": 451,
     "hash": "0d3cb384ecd3b445110278e1c4028058e1aa27fd"
@@ -139,7 +132,6 @@ PUT /v1/assets/:asset_id
 `updated_at` | date | 更新日期
 `size` | int | 檔案大小 (Bytes)
 `type` | string | MIME 類型
-`slug` | string | 網址的檔案名稱
 `width` | int | 圖片寬度
 `height` | int | 圖片高度
 `hash` | string | SHA1 Hash
