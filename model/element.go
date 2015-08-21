@@ -186,6 +186,7 @@ SELECT * FROM tree ORDER BY depth, index;`
 			"events.updated_at",
 		}).
 			Joins("JOIN elements ON events.element_id = elements.id").
+			Order("created_at").
 			Where("project_id = ?", option.ProjectID.String()).
 			Find(&events).
 			Error

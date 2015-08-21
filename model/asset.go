@@ -63,7 +63,7 @@ func (asset *Asset) Exists() bool {
 func GetAssetList(projectID types.UUID) ([]*Asset, error) {
 	var assets []*Asset
 
-	if err := db.Where("project_id = ?", projectID.String()).Find(&assets).Error; err != nil {
+	if err := db.Where("project_id = ?", projectID.String()).Order("created_at").Find(&assets).Error; err != nil {
 		return nil, err
 	}
 

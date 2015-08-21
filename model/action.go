@@ -55,7 +55,7 @@ func GetAction(id types.UUID) (*Action, error) {
 func GetActionList(projectID types.UUID) ([]*Action, error) {
 	var list []*Action
 
-	if err := db.Where("project_id = ?", projectID.String()).Find(&list).Error; err != nil {
+	if err := db.Where("project_id = ?", projectID.String()).Order("created_at").Find(&list).Error; err != nil {
 		return nil, err
 	}
 
