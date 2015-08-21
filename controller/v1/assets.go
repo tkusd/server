@@ -68,7 +68,7 @@ func saveAsset(form *assetForm, asset *model.Asset) error {
 		var err error
 
 		if asset.Slug != "" {
-			filepath := util.GetUploadFilePath(asset.Slug)
+			filepath := util.GetAssetFilePath(asset.Slug)
 
 			if err = os.Remove(filepath); err != nil {
 				return err
@@ -119,14 +119,15 @@ func saveAsset(form *assetForm, asset *model.Asset) error {
 			break
 		}
 
-		// Create the upload directory
-		if err := util.EnsureUploadDir(); err != nil {
+		// Write the file
+		asset.Slug = types.NewRandomUUID().String() + extname
+		uploadPath := util.GetAssetFilePath(asset.Slug)
+		dir, _ := filepath.Split(uploadPath)
+
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
 		}
 
-		// Write the file
-		asset.Slug = types.NewRandomUUID().String() + extname
-		uploadPath := util.GetUploadFilePath(asset.Slug)
 		file, err := os.Create(uploadPath)
 		h := sha1.New()
 		writer := io.MultiWriter(file, h)
@@ -251,7 +252,7 @@ func AssetBlob(c *gin.Context) error {
 		return err
 	}
 
-	path := util.GetUploadFilePath(asset.Slug)
+	path := util.GetAssetFilePath(asset.Slug)
 	http.ServeFile(c.Writer, c.Request, path)
 
 	return nil

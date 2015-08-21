@@ -7,10 +7,9 @@ import (
 
 	"path/filepath"
 
-	"os"
-
 	"bitbucket.org/liamstask/goose/lib/goose"
 	"github.com/jinzhu/gorm"
+	"github.com/tkusd/server/config"
 	"github.com/tkusd/server/util"
 )
 
@@ -47,13 +46,13 @@ func (q *QueryOption) ParseOrder() string {
 func init() {
 	var dbconf *goose.DBConf
 	var err error
-	env := os.Getenv("GO_ENV")
+	env := config.Env
 
 	if env == "" {
 		env = "development"
 	}
 
-	dbconf, err = goose.NewDBConf(filepath.Join(util.GetBaseDir(), databaseDir), env, "")
+	dbconf, err = goose.NewDBConf(filepath.Join(config.BaseDir, databaseDir), env, "")
 
 	if err != nil {
 		log.Fatal(err)

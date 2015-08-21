@@ -3,18 +3,20 @@ package util
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/tkusd/server/config"
 )
 
-const uploadDir = "uploads/assets"
-
-func GetUploadDir() string {
-	return filepath.Join(GetBaseDir(), uploadDir)
+func GetAssetFilePath(name string) string {
+	return filepath.Join(config.BaseDir, config.Config.AssetDir, name)
 }
 
-func EnsureUploadDir() error {
-	return os.MkdirAll(GetUploadDir(), os.ModePerm)
-}
+func IsAssetExist(name string) bool {
+	path := GetAssetFilePath(name)
 
-func GetUploadFilePath(name string) string {
-	return filepath.Join(GetUploadDir(), name)
+	if _, err := os.Stat(path); err == nil {
+		return true
+	}
+
+	return false
 }

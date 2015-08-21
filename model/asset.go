@@ -46,10 +46,10 @@ func (asset *Asset) Delete() error {
 }
 
 func (asset *Asset) DeleteAsset() error {
-	path := util.GetUploadFilePath(asset.Slug)
+	path := util.GetAssetFilePath(asset.Slug)
 
 	// File does not exist. Skip deletion
-	if _, err := os.Stat(path); err != nil {
+	if !util.IsAssetExist(asset.Slug) {
 		return nil
 	}
 
