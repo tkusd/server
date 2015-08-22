@@ -1,11 +1,20 @@
 package model
 
 import (
+	"database/sql"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/jinzhu/gorm"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
+)
+
+var (
+	rAssetBase = regexp.MustCompile(`^(.+?)(?: *\((\d+)\))?$`)
 )
 
 type Asset struct {
@@ -21,6 +30,78 @@ type Asset struct {
 	Width       int        `json:"width,omitempty"`
 	Height      int        `json:"height,omitempty"`
 	Hash        types.Hash `json:"hash"`
+}
+
+func (asset *Asset) BeforeSave(tx *gorm.DB) error {
+	asset.Name = govalidator.Trim(asset.Name, "")
+
+	if asset.Name == "" {
+		return &util.APIError{
+			Code:    util.RequiredError,
+			Field:   "name",
+			Message: "Name is required.",
+		}
+	}
+
+	var similarName string
+	var serial int
+
+	// Get the base name
+	ext := filepath.Ext(asset.Name)
+	originalBase := asset.Name[:len(asset.Name)-len(ext)]
+	base := originalBase
+	match := rAssetBase.FindStringSubmatch(base)
+
+	// Get the serial number from the base name
+	if match[2] != "" {
+		base = util.Slugize(match[1])
+		serial, _ = strconv.Atoi(match[2])
+	} else {
+		base = util.Slugize(base)
+	}
+
+	// Build the regular expression for search
+	exp := "^" + regexp.QuoteMeta(base) + " *\\(\\d+\\)" + regexp.QuoteMeta(ext) + "$"
+
+	// Search for the simliar name in the database
+	scope := tx.Table("assets").
+		Select("name").
+		Where("name ~ ? AND project_id = ?", exp, asset.ProjectID.String()).
+		Order("name desc").
+		Limit(1)
+
+	// Exclude the asset itself
+	if asset.ID.Valid() {
+		scope = scope.Not("id", asset.ID.String())
+	}
+
+	err := scope.Row().
+		Scan(&similarName)
+
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	// Update the serial number if there's a simliar name
+	if similarName != "" {
+		similarExt := filepath.Ext(similarName)
+		similarBase := similarName[:len(similarName)-len(similarExt)]
+		match := rAssetBase.FindStringSubmatch(similarBase)
+
+		if match[2] != "" {
+			serial, _ = strconv.Atoi(match[2])
+			serial++
+		}
+	}
+
+	// Append the serial number to the asset name
+	if serial > 0 {
+		asset.Name = base + " (" + strconv.Itoa(serial) + ")" + ext
+	} else {
+		asset.Name = base + ext
+	}
+
+	return nil
 }
 
 func (asset *Asset) Save() error {
