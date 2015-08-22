@@ -114,6 +114,14 @@
 			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
 		},
 		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "723492b65e225eafcba054e76ba18bb9c5ac1ea2"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Rev": "723492b65e225eafcba054e76ba18bb9c5ac1ea2"
+		},
+		{
 			"ImportPath": "gopkg.in/bluesuncorp/validator.v5",
 			"Comment": "v5.10.1",
 			"Rev": "06aac46c918960c01a241888042fc5e4e922b899"
