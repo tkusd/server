@@ -61,7 +61,7 @@ func (asset *Asset) BeforeSave(tx *gorm.DB) error {
 	}
 
 	// Build the regular expression for search
-	exp := "^" + regexp.QuoteMeta(base) + " *\\(\\d+\\)" + regexp.QuoteMeta(ext) + "$"
+	exp := "^" + regexp.QuoteMeta(base) + " *(\\(\\d+\\))?" + regexp.QuoteMeta(ext) + "$"
 
 	// Search for the simliar name in the database
 	scope := tx.Table("assets").
@@ -91,6 +91,8 @@ func (asset *Asset) BeforeSave(tx *gorm.DB) error {
 		if match[2] != "" {
 			serial, _ = strconv.Atoi(match[2])
 			serial++
+		} else {
+			serial = 1
 		}
 	}
 

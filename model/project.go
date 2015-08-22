@@ -94,6 +94,26 @@ func (p *Project) Save() error {
 	return nil
 }
 
+func deleteAssetFiles(assets []*Asset) {
+	for _, asset := range assets {
+		asset.DeleteAsset()
+	}
+}
+
+func (p *Project) BeforeDelete(tx *gorm.DB) error {
+	var assets []*Asset
+
+	if err := db.Where("project_id = ?", p.ID.String()).Select([]string{"id", "slug"}).Find(&assets).Error; err != nil {
+		return err
+	}
+
+	if len(assets) > 0 {
+		go deleteAssetFiles(assets)
+	}
+
+	return nil
+}
+
 // Delete deletes data from the database.
 func (p *Project) Delete() error {
 	return db.Delete(p).Error
