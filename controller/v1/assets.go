@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"io"
-	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -21,7 +20,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/daddye/vips"
 	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
@@ -312,71 +310,4 @@ func AssetBlob(c *gin.Context) error {
 
 	http.ServeFile(c.Writer, c.Request, path)
 	return nil
-}
-
-func AssetThumbnail(c *gin.Context) error {
-	asset, err := GetAsset(c)
-
-	if err != nil {
-		return err
-	}
-
-	if err := CheckProjectPermission(c, asset.ProjectID, false); err != nil {
-		return err
-	}
-
-	addAssetBlobCacheHeader(c, asset)
-
-	if shouldUseAssetCache(c, asset) {
-		c.Writer.WriteHeader(http.StatusNotModified)
-		return nil
-	}
-
-	switch asset.Type {
-	case "image/jpeg", "image/png", "image/gif":
-		var size, width, height int
-		var ok bool
-		path := util.GetAssetFilePath(asset.Slug)
-
-		if size, ok = thumbSize[c.Query("size")]; !ok {
-			size = thumbSize[defaultThumbSize]
-		}
-
-		if asset.Width > asset.Height {
-			width = size
-		} else {
-			height = size
-		}
-		file, err := os.Open(path)
-
-		if err != nil {
-			return err
-		}
-
-		defer file.Close()
-
-		buf, _ := ioutil.ReadAll(file)
-		thumb, err := vips.Resize(buf, vips.Options{
-			Width:        width,
-			Height:       height,
-			Crop:         false,
-			Extend:       vips.EXTEND_WHITE,
-			Interpolator: vips.BILINEAR,
-			Gravity:      vips.CENTRE,
-			Quality:      70,
-		})
-
-		if err != nil {
-			return err
-		}
-
-		c.Header(headerContentType, "image/jpeg")
-		c.Writer.Write(thumb)
-		return nil
-	}
-
-	return &util.APIError{
-		Code:    util.ContentTypeError,
-		Message: "Thumbnail only support for image/jpeg, image/png and image/gif content type.",
-	}
 }

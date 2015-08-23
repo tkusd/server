@@ -36,7 +36,6 @@ const (
 	assetCollectionURL = projectSingularURL + "/assets"
 	assetSingularURL   = "/assets/:" + assetIDParam
 	assetBlobURL       = assetSingularURL + "/blob"
-	assetThumbnailURL  = assetSingularURL + "/thumbnail"
 
 	collaboratorCollectionURL = projectSingularURL + "/collaborators"
 	collaboratorSingularURL   = collaboratorCollectionURL + "/:" + userIDParam
@@ -82,7 +81,6 @@ func Router(r *gin.RouterGroup) {
 	r.PUT(assetSingularURL, common.Wrap(AssetUpdate))
 	r.DELETE(assetSingularURL, common.Wrap(AssetDestroy))
 	r.GET(assetBlobURL, common.Wrap(AssetBlob))
-	// r.GET(assetThumbnailURL, common.Wrap(AssetThumbnail))
 
 	r.GET(actionCollectionURL, CheckProjectExist, common.Wrap(ActionList))
 	r.POST(actionCollectionURL, CheckProjectExist, common.Wrap(ActionCreate))
