@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"io"
+	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
+	"github.com/daddye/vips"
 	"github.com/gin-gonic/gin"
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
@@ -29,12 +31,22 @@ import (
 )
 
 const (
-	HeaderETag            = "ETag"
-	HeaderCacheControl    = "Cache-Control"
-	HeaderLastModified    = "Last-Modified"
-	HeaderIfModifiedSince = "If-Modified-Since"
-	HeaderIfNoneMatch     = "If-None-Match"
+	headerETag            = "ETag"
+	headerCacheControl    = "Cache-Control"
+	headerLastModified    = "Last-Modified"
+	headerIfModifiedSince = "If-Modified-Since"
+	headerIfNoneMatch     = "If-None-Match"
+	headerContentType     = "Content-Type"
+
+	defaultThumbSize = "medium"
 )
+
+var thumbSize = map[string]int{
+	"small":  160,
+	"medium": 320,
+	"large":  640,
+	"huge":   1024,
+}
 
 func AssetList(c *gin.Context) error {
 	projectID, err := GetIDParam(c, projectIDParam)
@@ -253,7 +265,7 @@ func AssetDestroy(c *gin.Context) error {
 }
 
 func shouldUseAssetCache(c *gin.Context, asset *model.Asset) bool {
-	if etag := c.Request.Header.Get(HeaderIfNoneMatch); etag != "" {
+	if etag := c.Request.Header.Get(headerIfNoneMatch); etag != "" {
 		if unquotedEtag, err := strconv.Unquote(etag); err == nil {
 			if hash, err := base64.StdEncoding.DecodeString(unquotedEtag); err == nil {
 				return bytes.Compare(hash, asset.Hash) == 0
@@ -261,13 +273,21 @@ func shouldUseAssetCache(c *gin.Context, asset *model.Asset) bool {
 		}
 	}
 
-	if modified := c.Request.Header.Get(HeaderIfModifiedSince); modified != "" {
+	if modified := c.Request.Header.Get(headerIfModifiedSince); modified != "" {
 		if modifiedTime, err := http.ParseTime(modified); err == nil {
 			return modifiedTime.Truncate(time.Second).Equal(asset.UpdatedAt.Time.Truncate(time.Second))
 		}
 	}
 
 	return false
+}
+
+func addAssetBlobCacheHeader(c *gin.Context, asset *model.Asset) {
+	etag := base64.StdEncoding.EncodeToString(asset.Hash)
+
+	c.Header(headerETag, strconv.Quote(etag))
+	c.Header(headerCacheControl, "private, must-revalidate, max-age=31536000") // 1 year
+	c.Header(headerLastModified, asset.UpdatedAt.UTC().Format(http.TimeFormat))
 }
 
 func AssetBlob(c *gin.Context) error {
@@ -281,18 +301,82 @@ func AssetBlob(c *gin.Context) error {
 		return err
 	}
 
-	path := util.GetAssetFilePath(asset.Slug)
-	etag := base64.StdEncoding.EncodeToString(asset.Hash)
-
-	c.Header(HeaderETag, strconv.Quote(etag))
-	c.Header(HeaderCacheControl, "private, must-revalidate, max-age=31536000") // 1 year
-	c.Header(HeaderLastModified, asset.UpdatedAt.UTC().Format(http.TimeFormat))
+	addAssetBlobCacheHeader(c, asset)
 
 	if shouldUseAssetCache(c, asset) {
 		c.Writer.WriteHeader(http.StatusNotModified)
 		return nil
 	}
 
+	path := util.GetAssetFilePath(asset.Slug)
+
 	http.ServeFile(c.Writer, c.Request, path)
 	return nil
+}
+
+func AssetThumbnail(c *gin.Context) error {
+	asset, err := GetAsset(c)
+
+	if err != nil {
+		return err
+	}
+
+	if err := CheckProjectPermission(c, asset.ProjectID, false); err != nil {
+		return err
+	}
+
+	addAssetBlobCacheHeader(c, asset)
+
+	if shouldUseAssetCache(c, asset) {
+		c.Writer.WriteHeader(http.StatusNotModified)
+		return nil
+	}
+
+	switch asset.Type {
+	case "image/jpeg", "image/png", "image/gif":
+		var size, width, height int
+		var ok bool
+		path := util.GetAssetFilePath(asset.Slug)
+
+		if size, ok = thumbSize[c.Query("size")]; !ok {
+			size = thumbSize[defaultThumbSize]
+		}
+
+		if asset.Width > asset.Height {
+			width = size
+		} else {
+			height = size
+		}
+		file, err := os.Open(path)
+
+		if err != nil {
+			return err
+		}
+
+		defer file.Close()
+
+		buf, _ := ioutil.ReadAll(file)
+		thumb, err := vips.Resize(buf, vips.Options{
+			Width:        width,
+			Height:       height,
+			Crop:         false,
+			Extend:       vips.EXTEND_WHITE,
+			Interpolator: vips.BILINEAR,
+			Gravity:      vips.CENTRE,
+			Quality:      70,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		c.Header(headerContentType, "image/jpeg")
+		c.Writer.Write(thumb)
+		return nil
+	}
+
+	return &util.APIError{
+		Code:    util.ContentTypeError,
+		Message: "Thumbnail only support for image/jpeg, image/png and image/gif content type.",
+	}
 }

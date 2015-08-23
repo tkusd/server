@@ -31,6 +31,10 @@
 			"Rev": "0aac9dbd861b4831f39f1fd306a8191ae27acc01"
 		},
 		{
+			"ImportPath": "github.com/daddye/vips",
+			"Rev": "40d1f99169ba1801a1e883aec947596e1d341296"
+		},
+		{
 			"ImportPath": "github.com/facebookgo/clock",
 			"Rev": "600d898af40aa09a7a93ecb9265d87b0504b6f03"
 		},
