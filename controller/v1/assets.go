@@ -3,6 +3,7 @@ package v1
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/base64"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -10,6 +11,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"image"
 	// Image packages
@@ -23,6 +26,14 @@ import (
 	"github.com/tkusd/server/model"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
+)
+
+const (
+	HeaderETag            = "ETag"
+	HeaderCacheControl    = "Cache-Control"
+	HeaderLastModified    = "Last-Modified"
+	HeaderIfModifiedSince = "If-Modified-Since"
+	HeaderIfNoneMatch     = "If-None-Match"
 )
 
 func AssetList(c *gin.Context) error {
@@ -241,6 +252,24 @@ func AssetDestroy(c *gin.Context) error {
 	return nil
 }
 
+func shouldUseAssetCache(c *gin.Context, asset *model.Asset) bool {
+	if etag := c.Request.Header.Get(HeaderIfNoneMatch); etag != "" {
+		if unquotedEtag, err := strconv.Unquote(etag); err == nil {
+			if hash, err := base64.StdEncoding.DecodeString(unquotedEtag); err == nil {
+				return bytes.Compare(hash, asset.Hash) == 0
+			}
+		}
+	}
+
+	if modified := c.Request.Header.Get(HeaderIfModifiedSince); modified != "" {
+		if modifiedTime, err := http.ParseTime(modified); err == nil {
+			return modifiedTime.Truncate(time.Second).Equal(asset.UpdatedAt.Time.Truncate(time.Second))
+		}
+	}
+
+	return false
+}
+
 func AssetBlob(c *gin.Context) error {
 	asset, err := GetAsset(c)
 
@@ -253,7 +282,17 @@ func AssetBlob(c *gin.Context) error {
 	}
 
 	path := util.GetAssetFilePath(asset.Slug)
-	http.ServeFile(c.Writer, c.Request, path)
+	etag := base64.StdEncoding.EncodeToString(asset.Hash)
 
+	c.Header(HeaderETag, strconv.Quote(etag))
+	c.Header(HeaderCacheControl, "private, must-revalidate, max-age=31536000") // 1 year
+	c.Header(HeaderLastModified, asset.UpdatedAt.UTC().Format(http.TimeFormat))
+
+	if shouldUseAssetCache(c, asset) {
+		c.Writer.WriteHeader(http.StatusNotModified)
+		return nil
+	}
+
+	http.ServeFile(c.Writer, c.Request, path)
 	return nil
 }
