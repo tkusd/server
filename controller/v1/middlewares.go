@@ -66,9 +66,8 @@ func CheckToken(c *gin.Context) (*model.Token, error) {
 		}
 	}
 
-	//key := rToken.FindStringSubmatch(authHeader)[1]
-	id := rToken.FindStringSubmatch(authHeader)[1]
-	token, err := model.GetToken(types.ParseUUID(id))
+	key := rToken.FindStringSubmatch(authHeader)[1]
+	token, err := model.GetTokenBySecret(key)
 
 	if err != nil {
 		return nil, &util.APIError{

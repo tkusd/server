@@ -29,7 +29,7 @@ func (h Base64Hash) HexString() string {
 
 // Base64String returns a string with base64 encoding.
 func (h Base64Hash) Base64String() string {
-	return base64.URLEncoding.EncodeToString(h.Hash)
+	return base64.StdEncoding.EncodeToString(h.Hash)
 }
 
 // IsEmpty returns true when the hash is empty.
@@ -73,7 +73,7 @@ func (h *Base64Hash) UnmarshalText(data []byte) error {
 
 // DecodeBase64 decodes the input string and returns a hash.
 func DecodeBase64(key string) (*Base64Hash, error) {
-	result, err := base64.URLEncoding.DecodeString(key)
+	result, err := base64.StdEncoding.DecodeString(key)
 
 	if err != nil {
 		return nil, err

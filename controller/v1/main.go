@@ -72,7 +72,7 @@ func Router(r *gin.RouterGroup) {
 	r.POST(childElementCollectionURL, common.Wrap(ChildElementCreate))
 
 	r.POST(tokenCollectionURL, common.Wrap(TokenCreate))
-	r.PUT(tokenSingularURL, common.Wrap(TokenUpdate))
+	r.GET(tokenSingularURL, common.Wrap(TokenShow))
 	r.DELETE(tokenSingularURL, common.Wrap(TokenDestroy))
 
 	r.GET(assetCollectionURL, CheckProjectExist, common.Wrap(AssetList))

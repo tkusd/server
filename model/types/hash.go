@@ -95,3 +95,13 @@ func SHA1(items ...string) Hash {
 func SHA256(items ...string) Hash {
 	return NewHash(sha256.New(), items...)
 }
+
+func DecodeHash(str string) (Hash, error) {
+	hash, err := hex.DecodeString(str)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return Hash(hash), nil
+}

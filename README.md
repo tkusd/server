@@ -6,7 +6,6 @@
 
 - Go 1.4
 - PostgreSQL 9.4
-- [libvips] 7.38.5+ (for [vips])
 
 ## Installation
 

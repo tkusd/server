@@ -71,20 +71,16 @@ func TokenCreate(c *gin.Context) error {
 	return common.APIResponse(c, http.StatusCreated, token)
 }
 
-// TokenUpdate handles PUT /tokens/:key.
-func TokenUpdate(c *gin.Context) error {
+// TokenShow handles GET /tokens/:key
+func TokenShow(c *gin.Context) error {
 	token, err := GetToken(c)
 
 	if err != nil {
 		return err
 	}
 
-	if err := token.Save(); err != nil {
-		return err
-	}
-
 	common.NoCacheHeader(c)
-	return common.APIResponse(c, http.StatusOK, token)
+	return common.APIResponse(c, http.StatusOK, token.WithoutSecret())
 }
 
 // TokenDestroy handles DELETE /tokens/:key.
