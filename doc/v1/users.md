@@ -155,4 +155,44 @@ PUT /v1/users/:user_id
 DELETE /v1/users/:user_id
 ```
 
+## 啟用使用者
+
+```
+POST /v1/activation/:activation_token
+```
+
+## 申請重設密碼
+
+```
+POST /v1/passwords/reset
+```
+
+### Request
+
+``` js
+{
+  "email": "abc@example.com"
+}
+```
+
+參數 | 型別 | 說明 | 預設值
+--- | --- | --- | ---
+`email` | string | Email | **必填**
+
+## 重設密碼
+
+```
+POST /v1/passwords/reset/:password_reset_token
+```
+
+``` js
+{
+  "password": "123456"
+}
+```
+
+參數 | 型別 | 說明 | 預設值
+--- | --- | --- | ---
+`password` | string | 密碼。長度為 6~50。 | **必填**
+
 [IETF 語言標籤]: https://en.wikipedia.org/wiki/IETF_language_tag

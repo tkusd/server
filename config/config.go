@@ -17,6 +17,12 @@ type config struct {
 		Secret string `yaml:"secret"`
 	} `yaml:"server"`
 
+	Mailgun struct {
+		Domain     string `yaml:"domain"`
+		PublicKey  string `yaml:"public_key"`
+		PrivateKey string `yaml:"private_key"`
+	} `yaml:"mailgun"`
+
 	EmailActivation bool   `yaml:"email_activation"`
 	UploadDir       string `yaml:"upload_dir"`
 	AssetDir        string `yaml:"asset_dir"`

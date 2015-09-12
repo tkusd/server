@@ -3,6 +3,11 @@ server:
   port: 3000
   secret: secret
 
+mailgun:
+  domain:
+  public_key:
+  private_key:
+
 email_activation: false
 
 upload_dir: uploads

@@ -31,7 +31,7 @@ func (t *Token) WithoutSecret() map[string]interface{} {
 }
 
 func (t *Token) BeforeCreate() error {
-	randomStr := util.RandStringBytesMaskImprSrc(rand.NewSource(time.Now().UnixNano()), secretLength)
+	randomStr := util.RandStringBytesMaskImprSrc("0123456789abcdef", rand.NewSource(time.Now().UnixNano()), secretLength)
 	hash, err := types.DecodeHash(randomStr)
 
 	if err != nil {

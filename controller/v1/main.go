@@ -7,13 +7,15 @@ import (
 
 // Params
 const (
-	userIDParam    = "user_id"
-	projectIDParam = "project_id"
-	elementIDParam = "element_id"
-	tokenIDParam   = "token_id"
-	assetIDParam   = "asset_id"
-	actionIDParam  = "action_id"
-	eventIDParam   = "event_id"
+	userIDParam          = "user_id"
+	projectIDParam       = "project_id"
+	elementIDParam       = "element_id"
+	tokenIDParam         = "token_id"
+	assetIDParam         = "asset_id"
+	actionIDParam        = "action_id"
+	eventIDParam         = "event_id"
+	activationIDParam    = "activation_id"
+	passwordResetIDParam = "password_reset_id"
 )
 
 // URL patterns
@@ -45,6 +47,11 @@ const (
 
 	eventCollectionURL = elementSingularURL + "/events"
 	eventSingularURL   = "/events/:" + eventIDParam
+
+	passwordResetURL         = "/passwords/reset"
+	passwordResetSingularURL = passwordResetURL + "/:" + passwordResetIDParam
+
+	activationSingularURL = "/activation/:" + activationIDParam
 )
 
 // Router returns a http.Handler.
@@ -93,4 +100,9 @@ func Router(r *gin.RouterGroup) {
 	r.GET(eventSingularURL, common.Wrap(EventShow))
 	r.PUT(eventSingularURL, common.Wrap(EventUpdate))
 	r.DELETE(eventSingularURL, common.Wrap(EventDestroy))
+
+	r.POST(passwordResetURL, common.Wrap(PasswordResetCreate))
+	r.POST(passwordResetSingularURL, common.Wrap(PasswordResetUpdate))
+
+	r.POST(activationSingularURL, common.Wrap(ActivateUser))
 }

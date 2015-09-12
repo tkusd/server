@@ -1,28 +1,27 @@
 package model
 
 import (
-	"time"
-
 	"github.com/asaskevich/govalidator"
 	"github.com/lib/pq"
+	"github.com/tkusd/server/config"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
-
-	"code.google.com/p/go-uuid/uuid"
 )
 
 // User represents the data structure of a user.
 type User struct {
-	ID              types.UUID       `json:"id"`
-	Name            string           `json:"name"`
-	Password        []byte           `json:"-"`
-	Email           string           `json:"email"`
-	Avatar          string           `json:"avatar"`
-	CreatedAt       types.Time       `json:"created_at"`
-	UpdatedAt       types.Time       `json:"updated_at"`
-	IsActivated     bool             `json:"is_activated"`
-	ActivationToken types.Base64Hash `json:"-"`
-	Language        string           `json:"language"`
+	ID                 types.UUID `json:"id"`
+	Name               string     `json:"name"`
+	Password           []byte     `json:"-"`
+	Email              string     `json:"email"`
+	Avatar             string     `json:"avatar"`
+	CreatedAt          types.Time `json:"created_at"`
+	UpdatedAt          types.Time `json:"updated_at"`
+	IsActivated        bool       `json:"is_activated"`
+	ActivationToken    types.UUID `json:"-"`
+	Language           string     `json:"language"`
+	PasswordResetToken types.UUID `json:"-"`
+	PasswordResetAt    types.Time `json:"-"`
 }
 
 // PublicProfile returns the data for public display.
@@ -111,6 +110,21 @@ func (u *User) Save() error {
 	return nil
 }
 
+func (u *User) AfterCreate() error {
+	if !u.IsActivated && config.Config.EmailActivation {
+		msg := util.Mailgun.NewMessage(
+			"Diff <noreply@tkusd.zespia.tw>",
+			"Activate your account",
+			"Click this link to activate your account: http://tkusd.zespia.tw/activation/"+u.ActivationToken.String(),
+			u.Email,
+		)
+
+		go util.Mailgun.Send(msg)
+	}
+
+	return nil
+}
+
 // Delete deletes data from the database.
 func (u *User) Delete() error {
 	return db.Delete(u).Error
@@ -125,9 +139,10 @@ func (u *User) Exists() bool {
 func (u *User) SetActivated(activated bool) {
 	if activated {
 		u.IsActivated = true
+		u.ActivationToken = types.UUID{}
 	} else {
 		u.IsActivated = false
-		u.ActivationToken = types.Base64Hash{types.SHA256(u.Email, time.Now().String(), uuid.New())}
+		u.ActivationToken = types.NewRandomUUID()
 	}
 }
 
@@ -201,6 +216,26 @@ func GetUserByEmail(email string) (*User, error) {
 	user := new(User)
 
 	if err := db.Where("email = ?", email).First(user).Error; err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func GetUserByActivationToken(str string) (*User, error) {
+	user := new(User)
+
+	if err := db.Where("activation_token = ?", str).First(user).Error; err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func GetUserByPasswordResetToken(str string) (*User, error) {
+	user := new(User)
+
+	if err := db.Where("password_reset_token = ?", str).First(user).Error; err != nil {
 		return nil, err
 	}
 
