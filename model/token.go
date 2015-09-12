@@ -45,7 +45,7 @@ func (t *Token) BeforeCreate() error {
 
 // Save creates or updates data in the database.
 func (t *Token) Save() error {
-	return db.LogMode(true).Save(t).Error
+	return db.Save(t).Error
 }
 
 // Delete deletes data from the database.

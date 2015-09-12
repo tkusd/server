@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
@@ -50,6 +51,10 @@ func AssetList(c *gin.Context) error {
 	projectID, err := GetIDParam(c, projectIDParam)
 
 	if err != nil {
+		return err
+	}
+
+	if err := CheckProjectPermission(c, *projectID, false); err != nil {
 		return err
 	}
 
@@ -309,5 +314,54 @@ func AssetBlob(c *gin.Context) error {
 	path := util.GetAssetFilePath(asset.Slug)
 
 	http.ServeFile(c.Writer, c.Request, path)
+	return nil
+}
+
+func AssetArchive(c *gin.Context) error {
+	projectID, err := GetIDParam(c, projectIDParam)
+
+	if err != nil {
+		return err
+	}
+
+	if err := CheckProjectPermission(c, *projectID, false); err != nil {
+		return err
+	}
+
+	list, err := model.GetAssetList(*projectID)
+
+	if err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	w := zip.NewWriter(buf)
+
+	for _, asset := range list {
+		f, err := w.Create(asset.Name)
+
+		if err != nil {
+			return err
+		}
+
+		var src *os.File
+		path := util.GetAssetFilePath(asset.Slug)
+
+		if src, err = os.Open(path); err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(f, src); err != nil {
+			return err
+		}
+	}
+
+	if err := w.Close(); err != nil {
+		return err
+	}
+
+	c.Header("Content-Type", "application/zip")
+	c.Header("Content-Disposition", "attachment; filename="+projectID.String()+".zip")
+	buf.WriteTo(c.Writer)
 	return nil
 }
