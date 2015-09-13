@@ -27,7 +27,6 @@ const (
 	ProjectNotFoundError = 1202
 	ElementNotFoundError = 1203
 	AssetNotFound        = 1204
-	ActionNotFound       = 1205
 	EventNotFound        = 1206
 )
 
@@ -39,7 +38,6 @@ const (
 	TokenInvalidError                = 1303
 	UserForbiddenError               = 1304
 	ElementNotOwnedByProjectError    = 1307
-	ActionNotOwnedByProjectError     = 1308
 	PasswordResetTokenMismatchError  = 1309
 	PasswordResetTokenExpiredError   = 1310
 	UserAlreadyActivatedError        = 1311

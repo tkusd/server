@@ -12,7 +12,6 @@ const (
 	elementIDParam       = "element_id"
 	tokenIDParam         = "token_id"
 	assetIDParam         = "asset_id"
-	actionIDParam        = "action_id"
 	eventIDParam         = "event_id"
 	activationIDParam    = "activation_id"
 	passwordResetIDParam = "password_reset_id"
@@ -39,12 +38,6 @@ const (
 	assetSingularURL   = "/assets/:" + assetIDParam
 	assetBlobURL       = assetSingularURL + "/blob"
 	assetArchiveURL    = projectSingularURL + "/assets/archive"
-
-	collaboratorCollectionURL = projectSingularURL + "/collaborators"
-	collaboratorSingularURL   = collaboratorCollectionURL + "/:" + userIDParam
-
-	actionCollectionURL = projectSingularURL + "/actions"
-	actionSingularURL   = "/actions/:" + actionIDParam
 
 	eventCollectionURL = elementSingularURL + "/events"
 	eventSingularURL   = "/events/:" + eventIDParam
@@ -90,12 +83,6 @@ func Router(r *gin.RouterGroup) {
 	r.DELETE(assetSingularURL, common.Wrap(AssetDestroy))
 	r.GET(assetBlobURL, common.Wrap(AssetBlob))
 	r.GET(assetArchiveURL, CheckProjectExist, common.Wrap(AssetArchive))
-
-	r.GET(actionCollectionURL, CheckProjectExist, common.Wrap(ActionList))
-	r.POST(actionCollectionURL, CheckProjectExist, common.Wrap(ActionCreate))
-	r.GET(actionSingularURL, common.Wrap(ActionShow))
-	r.PUT(actionSingularURL, common.Wrap(ActionUpdate))
-	r.DELETE(actionSingularURL, common.Wrap(ActionDestroy))
 
 	r.GET(eventCollectionURL, CheckElementExist, common.Wrap(EventList))
 	r.POST(eventCollectionURL, CheckElementExist, common.Wrap(EventCreate))
