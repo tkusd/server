@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/lib/pq"
 	"github.com/tkusd/server/model/types"
 	"github.com/tkusd/server/util"
 )
@@ -9,8 +8,8 @@ import (
 type Event struct {
 	ID        types.UUID `json:"id"`
 	ElementID types.UUID `json:"element_id"`
-	ActionID  types.UUID `json:"action_id"`
 	Event     string     `json:"event"`
+	Workspace string     `json:"workspace"`
 	CreatedAt types.Time `json:"created_at"`
 	UpdatedAt types.Time `json:"updated_at"`
 }
@@ -24,33 +23,7 @@ func (event *Event) Save() error {
 		}
 	}
 
-	if !event.ActionID.Valid() {
-		return &util.APIError{
-			Field:   "action_id",
-			Code:    util.RequiredError,
-			Message: "Action ID is required.",
-		}
-	}
-
-	err := db.Save(event).Error
-
-	if err == nil {
-		return nil
-	}
-
-	switch e := err.(type) {
-	case *pq.Error:
-		switch e.Code.Name() {
-		case ForeignKeyViolation:
-			return &util.APIError{
-				Code:    util.ActionNotOwnedByProjectError,
-				Message: "Action is not owned by the project.",
-				Field:   "action_id",
-			}
-		}
-	}
-
-	return err
+	return db.Save(event).Error
 }
 
 func (event *Event) Delete() error {

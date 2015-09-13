@@ -7,7 +7,6 @@ import (
 	"github.com/mholt/binding"
 	"github.com/tkusd/server/controller/common"
 	"github.com/tkusd/server/model"
-	"github.com/tkusd/server/model/types"
 )
 
 func EventList(c *gin.Context) error {
@@ -33,14 +32,14 @@ func EventList(c *gin.Context) error {
 }
 
 type eventForm struct {
-	Event    *string     `json:"event"`
-	ActionID *types.UUID `json:"action_id"`
+	Event     *string `json:"event"`
+	Workspace *string `json:"workspace"`
 }
 
 func (form *eventForm) FieldMap() binding.FieldMap {
 	return binding.FieldMap{
-		&form.Event:    "event",
-		&form.ActionID: "action_id",
+		&form.Event:     "event",
+		&form.Workspace: "workspace",
 	}
 }
 
@@ -49,8 +48,8 @@ func saveEvent(form *eventForm, event *model.Event) error {
 		event.Event = *form.Event
 	}
 
-	if form.ActionID != nil {
-		event.ActionID = *form.ActionID
+	if form.Workspace != nil {
+		event.Workspace = *form.Workspace
 	}
 
 	return event.Save()

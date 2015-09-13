@@ -180,7 +180,7 @@ SELECT * FROM tree ORDER BY depth, index;`
 		err := db.Select([]string{
 			"events.id",
 			"events.element_id",
-			"events.action_id",
+			"events.workspace",
 			"events.event",
 			"events.created_at",
 			"events.updated_at",
