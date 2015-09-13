@@ -75,6 +75,10 @@
 			"Rev": "a8d8d01c4f91602f876bf5aa210274e8203a6b45"
 		},
 		{
+			"ImportPath": "github.com/mailgun/mailgun-go",
+			"Rev": "343a8f098a77b95ca17181df58dc393612f19408"
+		},
+		{
 			"ImportPath": "github.com/manucorporat/sse",
 			"Rev": "c142f0f1baea5cef7f98a8a6c222f6134368c1f5"
 		},
@@ -85,6 +89,10 @@
 		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
 			"Rev": "5f64400729dce4425be38a0007e19949af4ee4f8"
+		},
+		{
+			"ImportPath": "github.com/mbanzon/simplehttp",
+			"Rev": "04c542e7ac706a25820090f274ea6a4f39a63326"
 		},
 		{
 			"ImportPath": "github.com/mholt/binding",
